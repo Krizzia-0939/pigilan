@@ -1,0 +1,13 @@
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+
+uploads/
+exports/
+
+pigilan.db
+pigilan_schema_check.db
+
+.streamlit/secrets.toml

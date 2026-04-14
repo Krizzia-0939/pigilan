@@ -1,0 +1,17 @@
+{
+  "name": "Pigilan",
+  "short_name": "Pigilan",
+  "description": "Farmer-friendly ASF monitoring app built with Streamlit.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f0e6",
+  "theme_color": "#2f6f3e",
+  "icons": [
+    {
+      "src": "/app/static/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

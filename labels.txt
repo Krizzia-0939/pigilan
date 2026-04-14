@@ -1,0 +1,3 @@
+0 ASF_Suspected
+1 No_Visible_Symptoms
+2 Not_Pig

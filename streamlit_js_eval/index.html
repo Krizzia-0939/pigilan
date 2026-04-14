@@ -1,0 +1,91 @@
+<html>
+  <body>
+    <script>
+      function getLocation() {
+        return new Promise((resolve) => {
+          if (!navigator.geolocation) {
+            resolve({
+              error: {
+                code: 0,
+                message: "Browser does not support geolocation."
+              }
+            });
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                coords: {
+                  accuracy: position.coords.accuracy,
+                  altitude: position.coords.altitude,
+                  altitudeAccuracy: position.coords.altitudeAccuracy,
+                  heading: position.coords.heading,
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  speed: position.coords.speed
+                },
+                timestamp: position.timestamp
+              });
+            },
+            (error) => {
+              resolve({
+                error: {
+                  code: error.code,
+                  message: error.message
+                }
+              });
+            }
+          );
+        });
+      }
+
+      function sendMessageToStreamlitClient(type, data) {
+        const outData = Object.assign(
+          {
+            isStreamlitMessage: true,
+            type: type
+          },
+          data
+        );
+        window.parent.postMessage(outData, "*");
+      }
+
+      function init() {
+        sendMessageToStreamlitClient("streamlit:componentReady", { apiVersion: 1 });
+      }
+
+      function setFrameHeight(height) {
+        sendMessageToStreamlitClient("streamlit:setFrameHeight", { height: height });
+      }
+
+      function sendDataToPython(data) {
+        sendMessageToStreamlitClient("streamlit:setComponentValue", data);
+      }
+
+      let lastExpression = "";
+
+      function onDataFromPython(event) {
+        if (event.data.type !== "streamlit:render") return;
+
+        const expression = event.data.args.js_expressions;
+        if (expression === lastExpression) return;
+
+        lastExpression = expression;
+        const result = eval(expression);
+
+        Promise.resolve(result).then((value) => {
+          sendDataToPython({ value: value, dataType: "json" });
+        });
+      }
+
+      window.addEventListener("load", function () {
+        window.addEventListener("message", onDataFromPython);
+        init();
+        window.setTimeout(function () {
+          setFrameHeight(document.documentElement.clientHeight || 0);
+        }, 0);
+      });
+    </script>
+  </body>
+</html>
