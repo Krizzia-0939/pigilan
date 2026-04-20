@@ -1,7 +1,7 @@
-const CACHE_NAME = "pigilan-static-v1";
+const CACHE_NAME = "pigilan-static-v20260420";
 const STATIC_ASSETS = [
-  "/app/static/manifest.json",
-  "/app/static/icon.svg"
+  "/app/static/manifest.json?v=20260420",
+  "/app/static/icon.svg?v=20260420"
 ];
 
 self.addEventListener("install", (event) => {
@@ -45,7 +45,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
           return networkResponse;
         })
-        .catch(() => caches.match("/app/static/icon.svg"));
+        .catch(() => caches.match("/app/static/icon.svg?v=20260420"));
     })
   );
 });

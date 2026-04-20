@@ -26,6 +26,7 @@ def build_local_image_data_uri(path: Path):
         ".jpg": "image/jpeg",
         ".jpeg": "image/jpeg",
         ".webp": "image/webp",
+        ".svg": "image/svg+xml",
     }.get(path.suffix.lower())
 
     if not mime_type:

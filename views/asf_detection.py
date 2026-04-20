@@ -641,11 +641,6 @@ def render_step_bar(title):
     st.markdown(f"<div class='assessment-step-bar'>{title}</div>", unsafe_allow_html=True)
 
 
-def reset_symptom_selection():
-    for option in SYMPTOM_OPTIONS:
-        st.session_state[option["key"]] = False
-
-
 def get_selected_symptoms():
     return [
         option["label"]
@@ -733,16 +728,6 @@ with st.container(border=True):
         target_column = symptom_col1 if index % 2 == 0 else symptom_col2
         with target_column:
             st.checkbox(option["label"], key=option["key"])
-
-    spacer_col, action_col = st.columns([2, 1], gap="medium")
-    with spacer_col:
-        st.write("")
-    with action_col:
-        st.write("")
-        st.write("")
-        if st.button("Clear Selection", key="assessment_clear_selection", use_container_width=True):
-            reset_symptom_selection()
-            st.rerun()
 
 with st.container(border=True):
     render_step_bar("Step 3: Farm Location")

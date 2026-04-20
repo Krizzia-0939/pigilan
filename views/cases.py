@@ -543,7 +543,7 @@ if cases:
                 unsafe_allow_html=True,
             )
             if case.get("sync_status", "pending") != "synced":
-                st.info("This case is saved locally and still waiting for manual sync/export.")
+                st.info("This case is saved locally and still waiting for sync/export.")
             st.write(f"Case Title: {case['case_name'] or 'Untitled Case'}")
             st.write(f"Date Saved: {case['created_at']}")
             st.write(f"Number of Pigs Checked: {case['pig_count']}")

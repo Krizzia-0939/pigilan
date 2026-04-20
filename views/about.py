@@ -12,7 +12,7 @@ ABOUT_HIGHLIGHTS = [
     {
         "label": "Offline Saving",
         "title": "Keep records even without internet.",
-        "copy": "Assessments, reports, and sync packages can be saved locally first so field work does not stop when signal is weak.",
+        "copy": "Assessments and reports can be saved locally first so field work does not stop when signal is weak.",
     },
     {
         "label": "Farm Guidance",

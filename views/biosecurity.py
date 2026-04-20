@@ -38,4 +38,4 @@ if submitted:
         st.success(result["warning_message"])
 
     st.caption(f"Saved biosecurity check #{result['record_id']}.")
-    st.caption("This checklist is stored locally first and can be included in the sync package later.")
+    st.caption("This checklist is stored locally first and can be synced later.")

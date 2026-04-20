@@ -1,15 +1,23 @@
 import streamlit as st
 import runpy
-from asset_utils import build_local_image_data_uri, resolve_asset_path
+from asset_utils import ROOT_DIR, build_local_image_data_uri, resolve_asset_path
 from pwa import inject_pwa_support
 
-st.set_page_config(page_title="Pigilan", layout="wide", initial_sidebar_state="collapsed")
+PIGILAN_LOGO = resolve_asset_path("PIGilan-Logo.png")
+PIGILAN_ICON = ROOT_DIR / "static" / "icon.svg"
+
+page_config = {
+    "page_title": "Pigilan",
+    "layout": "wide",
+    "initial_sidebar_state": "collapsed",
+}
+if PIGILAN_ICON.exists():
+    page_config["page_icon"] = str(PIGILAN_ICON)
+
+st.set_page_config(**page_config)
 inject_pwa_support()
 
-PIGILAN_LOGO = resolve_asset_path("PIGilan-Logo.png")
-
-
-PIGILAN_LOGO_DATA_URI = build_local_image_data_uri(PIGILAN_LOGO)
+PIGILAN_LOGO_DATA_URI = build_local_image_data_uri(PIGILAN_LOGO) or build_local_image_data_uri(PIGILAN_ICON)
 
 
 def inject_shell_styles():

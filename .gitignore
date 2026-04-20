@@ -9,5 +9,7 @@ exports/
 
 pigilan.db
 pigilan_schema_check.db
+sync*.db
+sync*.db-journal
 
 .streamlit/secrets.toml

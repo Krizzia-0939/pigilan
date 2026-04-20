@@ -5,13 +5,11 @@ import streamlit as st
 
 from backend import (
     BIOSECURITY_ITEMS,
-    build_sync_package,
     edit_user_profile,
     get_admin_dashboard_data,
     get_database_backup,
     get_latest_biosecurity_state,
     get_sync_status_summary,
-    import_sync_package,
     login_user,
     register_user,
     save_biosecurity_check,
@@ -23,14 +21,10 @@ if "user" not in st.session_state:
     st.session_state.user = None
 if "show_edit_profile" not in st.session_state:
     st.session_state.show_edit_profile = False
-if "sync_server_url" not in st.session_state:
-    st.session_state.sync_server_url = "http://127.0.0.1:8000"
 if "auth_notice" not in st.session_state:
     st.session_state.auth_notice = ""
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "signin"
-if "admin_notice" not in st.session_state:
-    st.session_state.admin_notice = None
 
 
 def inject_auth_styles():
@@ -1030,13 +1024,12 @@ if st.session_state.user:
     if user.get("role") == "admin":
         inject_admin_styles()
         admin_data = get_admin_dashboard_data()
-        admin_notice = st.session_state.pop("admin_notice", None)
         backup = get_database_backup()
         risk_filter = "All"
         filtered_cases = admin_data["recent_cases"]
         latest_alert = admin_data["recent_alerts"][0] if admin_data["recent_alerts"] else None
         alert_label = "No recent alert"
-        alert_message = "Farmer sync activity and risk notifications will show here."
+        alert_message = "Recent risk notifications will show here."
         alert_chip_class = "admin-stat-chip admin-stat-chip--low"
 
         if latest_alert:
@@ -1058,19 +1051,6 @@ if st.session_state.user:
             ),
             unsafe_allow_html=True,
         )
-
-        if admin_notice:
-            notice_kind = admin_notice.get("kind", "success")
-            st.markdown(
-                f"<div class='admin-banner admin-banner--{escape(notice_kind)}'>{escape(admin_notice.get('message', ''))}</div>",
-                unsafe_allow_html=True,
-            )
-            details = admin_notice.get("details") or []
-            for detail in details:
-                st.markdown(
-                    f"<div class='admin-banner admin-banner--info'>{escape(detail)}</div>",
-                    unsafe_allow_html=True,
-                )
 
         card_col1, card_col2, card_col3 = st.columns([1, 1, 1.7], gap="medium")
         with card_col1:
@@ -1112,36 +1092,21 @@ if st.session_state.user:
                 st.markdown(
                     (
                         "<div class='admin-card'>"
-                        "<p class='admin-card-title'>Manual Sync Import</p>"
-                        "<p class='admin-upload-copy'>Drag and drop a farmer sync package here. JSON files only.</p>"
+                        "<p class='admin-card-title'>Database Backup</p>"
+                        "<p class='admin-upload-copy'>Download a full backup of the local Pigilan database on this device.</p>"
                         "</div>"
                     ),
                     unsafe_allow_html=True,
                 )
 
-                admin_sync_file = st.file_uploader(
-                    "Upload Farmer Sync Package",
-                    type=["json"],
-                    key="admin_sync_package_upload",
-                    help="Import a farmer export package into this admin device.",
-                    label_visibility="collapsed",
+                st.download_button(
+                    "Download Backup",
+                    data=backup["bytes"],
+                    file_name=backup["file_name"],
+                    mime="application/octet-stream",
+                    key="download_backup_db_admin",
+                    use_container_width=True,
                 )
-                upload_action_col1, upload_action_col2 = st.columns([1, 1], gap="small")
-                with upload_action_col1:
-                    import_clicked = st.button(
-                        "Import Sync Package",
-                        key="import_sync_package_button",
-                        use_container_width=True,
-                    )
-                with upload_action_col2:
-                    st.download_button(
-                        "Download Backup",
-                        data=backup["bytes"],
-                        file_name=backup["file_name"],
-                        mime="application/octet-stream",
-                        key="download_backup_db_admin",
-                        use_container_width=True,
-                    )
 
                 st.markdown(
                     (
@@ -1152,29 +1117,6 @@ if st.session_state.user:
                     ),
                     unsafe_allow_html=True,
                 )
-
-        if import_clicked:
-            try:
-                import_result = import_sync_package(admin_sync_file)
-            except ValueError as exc:
-                st.session_state.admin_notice = {
-                    "kind": "error",
-                    "message": str(exc),
-                    "details": [],
-                }
-            else:
-                st.session_state.admin_notice = {
-                    "kind": "success",
-                    "message": f"Imported sync package for {import_result['username']}.",
-                    "details": [
-                        f"Created new farmer account: {import_result['created_user']}",
-                        f"Imported cases: {import_result['imported_cases']}",
-                        f"Skipped duplicate cases: {import_result['skipped_cases']}",
-                        f"Imported biosecurity checks: {import_result['imported_biosecurity']}",
-                        f"Skipped duplicate biosecurity checks: {import_result['skipped_biosecurity']}",
-                    ],
-                }
-            st.rerun()
 
         header_col, filter_col = st.columns([4, 1.15], gap="medium")
         with header_col:
@@ -1345,10 +1287,7 @@ if st.session_state.user:
             st.write("")
             if st.button("Sync", key="account_sync_button_header", use_container_width=True):
                 try:
-                    sync_result = sync_with_server(
-                        user_id=user["id"],
-                        server_url=st.session_state.sync_server_url,
-                    )
+                    sync_result = sync_with_server(user_id=user["id"])
                 except ValueError as exc:
                     profile_feedback_message = str(exc)
                     profile_feedback_kind = "warning"
@@ -1459,19 +1398,6 @@ if st.session_state.user:
                 st.session_state.show_edit_profile = False
                 st.success("Your details were updated successfully.")
                 st.rerun()
-
-    sync_package = build_sync_package(user["id"])
-    with st.expander("Manual Sync Package"):
-        st.caption("Download a JSON copy if you want to transfer your records manually to another device.")
-        st.download_button(
-            "Download Sync Package",
-            data=sync_package["bytes"],
-            file_name=sync_package["file_name"],
-            mime="application/json",
-            key="download_sync_package",
-            help="Use this JSON file for manual sharing or later sync to a master device.",
-            use_container_width=True,
-        )
 
     st.markdown(
         """

@@ -1,9 +1,14 @@
 import sqlite3
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 
-DB_PATH = Path(__file__).with_name("pigilan.db")
+PROJECT_ROOT = Path(__file__).resolve().parent
+DB_PATH = Path(os.environ.get("PIGILAN_DB_PATH", str(PROJECT_ROOT / "pigilan.db"))).expanduser()
+if not DB_PATH.is_absolute():
+    DB_PATH = PROJECT_ROOT / DB_PATH
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 def get_connection():
@@ -300,9 +305,9 @@ def create_risk_assessment(
             ml_percentage, total_percentage, risk_level,
             recommendation, created_at, client_record_id, sync_status, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)  
         """,
-        (
+        ( # Gwapo ako, Roylyn <3
             user_id,
             pig_count,
             symptoms,

@@ -1,9 +1,9 @@
 from pathlib import Path
 from datetime import datetime
 from math import atan2, cos, radians, sin, sqrt
+from urllib.parse import urlparse
 import base64
 import hashlib
-import json
 import os
 import secrets
 import uuid
@@ -45,10 +45,11 @@ from database import (
 from pdf_utils import build_simple_pdf
 
 
-DB_FILE_PATH = Path(__file__).resolve().parent / "pigilan.db"
-UPLOADS_DIR = Path(__file__).resolve().parent / "uploads"
+PROJECT_ROOT = Path(__file__).resolve().parent
+DB_FILE_PATH = PROJECT_ROOT / "pigilan.db"
+UPLOADS_DIR = PROJECT_ROOT / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
-EXPORTS_DIR = Path(__file__).resolve().parent / "exports"
+EXPORTS_DIR = PROJECT_ROOT / "exports"
 EXPORTS_DIR.mkdir(exist_ok=True)
 DEFAULT_SYNC_SERVER_URL = os.environ.get("PIGILAN_SYNC_SERVER_URL", "http://127.0.0.1:8000")
 MAX_PIG_COUNT = 100000
@@ -346,6 +347,49 @@ def distance_km(lat1, lon1, lat2, lon2):
     return earth_radius_km * c
 
 
+def _to_portable_media_path(file_path):
+    try:
+        return Path(file_path).resolve().relative_to(PROJECT_ROOT).as_posix()
+    except Exception:
+        return str(file_path)
+
+
+def resolve_media_path(path_value):
+    if not path_value:
+        return None
+
+    raw_value = str(path_value).strip()
+    if not raw_value:
+        return None
+
+    raw_path = Path(raw_value)
+    candidate_paths = []
+
+    if raw_path.is_absolute():
+        candidate_paths.append(raw_path)
+        candidate_paths.append(UPLOADS_DIR / raw_path.name)
+    else:
+        candidate_paths.append(PROJECT_ROOT / raw_path)
+        candidate_paths.append(UPLOADS_DIR / raw_path.name)
+
+    seen = set()
+    for candidate in candidate_paths:
+        normalized_candidate = str(candidate)
+        if normalized_candidate in seen:
+            continue
+        seen.add(normalized_candidate)
+        if candidate.exists():
+            return str(candidate)
+
+    return None
+
+
+def _hydrate_case_media_paths(case_details):
+    hydrated_case = dict(case_details)
+    hydrated_case["image_path"] = resolve_media_path(case_details.get("image_path"))
+    return hydrated_case
+
+
 def save_case_image(case_id, uploaded_file):
     if uploaded_file is None:
         return None
@@ -353,8 +397,9 @@ def save_case_image(case_id, uploaded_file):
     safe_name = Path(uploaded_file.name).name
     file_path = UPLOADS_DIR / f"case_{case_id}_{safe_name}"
     file_path.write_bytes(uploaded_file.getbuffer())
-    create_case_image(case_id, str(file_path))
-    return str(file_path)
+    stored_path = _to_portable_media_path(file_path)
+    create_case_image(case_id, stored_path)
+    return stored_path
 
 
 def _safe_report_name(case_name):
@@ -366,11 +411,12 @@ def _safe_report_name(case_name):
 
 
 def build_case_report_pdf(case_details, user_profile):
+    resolved_image_path = resolve_media_path(case_details.get("image_path"))
     symptoms = case_details.get("symptoms") or "No symptoms selected"
     notes = case_details.get("remarks") or "No notes provided."
     image_note = (
-        f"Attached photo saved at: {case_details['image_path']}"
-        if case_details.get("image_path")
+        f"Attached photo saved at: {resolved_image_path}"
+        if resolved_image_path
         else "No pig photo saved for this case."
     )
     map_point = (
@@ -431,18 +477,19 @@ def build_case_report_pdf(case_details, user_profile):
     return build_simple_pdf(
         "Pigilan ASF Case Report",
         sections,
-        image_path=case_details.get("image_path"),
+        image_path=resolved_image_path,
     )
 
 
 def save_case_report_export(case_details, user_profile, pdf_bytes, shared_to="Downloaded PDF"):
+    resolved_image_path = resolve_media_path(case_details.get("image_path"))
     report_name = _safe_report_name(case_details.get("case_name"))
     file_path = EXPORTS_DIR / f"case_{case_details['id']}_{report_name}.pdf"
     file_path.write_bytes(pdf_bytes)
     share_id = create_case_share(
         case_id=case_details["id"],
         pdf_file_path=str(file_path),
-        image_file_path=case_details.get("image_path"),
+        image_file_path=resolved_image_path,
         shared_to=shared_to,
     )
     return {
@@ -548,7 +595,7 @@ def mark_all_notifications_as_read(user_id):
 
 
 def list_cases_for_user(user_id):
-    return get_cases_for_user(user_id)
+    return [_hydrate_case_media_paths(case) for case in get_cases_for_user(user_id)]
 
 
 def list_case_markers():
@@ -688,7 +735,7 @@ def get_sync_status_summary(user_id=None):
     }
 
 
-def build_sync_package(user_id):
+def _build_sync_payload(user_id):
     user = get_user_by_id(user_id)
     if not user:
         raise ValueError("User account not found.")
@@ -701,7 +748,7 @@ def build_sync_package(user_id):
     for detailed_case in detailed_cases:
         base_case = cases_for_user.get(detailed_case["id"], {})
         image_payload = None
-        image_path = detailed_case.get("image_path")
+        image_path = resolve_media_path(detailed_case.get("image_path"))
         if image_path:
             image_file = Path(image_path)
             if image_file.exists():
@@ -774,29 +821,7 @@ def build_sync_package(user_id):
         ],
         "sync_summary": get_sync_status_summary(user_id=user_id),
     }
-    package_bytes = json.dumps(sync_package, indent=2).encode("utf-8")
-    file_name = f"pigilan_sync_{user.get('username', 'user')}.json"
-    return {
-        "file_name": file_name,
-        "bytes": package_bytes,
-    }
-
-
-def _load_sync_json(uploaded_file):
-    if uploaded_file is None:
-        raise ValueError("Please choose a sync package file first.")
-
-    raw_bytes = uploaded_file.getvalue()
-    try:
-        payload = json.loads(raw_bytes.decode("utf-8"))
-    except Exception as exc:
-        raise ValueError("The selected file is not a valid Pigilan sync package.") from exc
-
-    if payload.get("app") != "Pigilan":
-        raise ValueError("This file is not a Pigilan sync package.")
-    if payload.get("format_version") != 1:
-        raise ValueError("Unsupported sync package version.")
-    return payload
+    return sync_package
 
 
 def import_sync_payload(payload):
@@ -822,7 +847,10 @@ def import_sync_payload(payload):
             barangay=user_payload.get("barangay") or "Unknown",
             municipality=user_payload.get("municipality") or "Unknown",
             province=user_payload.get("province") or "Unknown",
-            address=_clean_address_value(user_payload.get("address")) or _format_address_record(user_payload, fallback=None),
+            address=(
+                _clean_address_value(user_payload.get("address"))
+                or _format_address_record(user_payload, fallback=None)
+            ),
             role="farmer",
             client_record_id=client_record_id,
             sync_status="synced",
@@ -873,7 +901,11 @@ def import_sync_payload(payload):
             total_percentage=float(assessment_payload.get("total_percentage") or 0),
             risk_level=assessment_payload.get("risk_level") or "LOW RISK",
             recommendation=assessment_payload.get("recommendation") or "",
-            client_record_id=f"{case_client_record_id}-assessment" if case_client_record_id else str(uuid.uuid4()),
+            client_record_id=(
+                f"{case_client_record_id}-assessment"
+                if case_client_record_id
+                else str(uuid.uuid4())
+            ),
             sync_status="synced",
         )
 
@@ -895,7 +927,7 @@ def import_sync_payload(payload):
             image_bytes = base64.b64decode(image_payload["content_base64"])
             image_path = UPLOADS_DIR / f"case_{case_id}_{file_name}"
             image_path.write_bytes(image_bytes)
-            create_case_image(case_id, str(image_path))
+            create_case_image(case_id, _to_portable_media_path(image_path))
 
         risk_level = assessment_payload.get("risk_level")
         if risk_level in {"HIGH RISK", "MODERATE RISK"}:
@@ -938,15 +970,40 @@ def import_sync_payload(payload):
     }
 
 
-def import_sync_package(uploaded_file):
-    payload = _load_sync_json(uploaded_file)
-    return import_sync_payload(payload)
+def _is_local_sync_url(base_url):
+    normalized_url = base_url if "://" in base_url else f"http://{base_url}"
+    hostname = urlparse(normalized_url).hostname
+    return hostname in {"127.0.0.1", "localhost"}
+
+
+def _extract_sync_error_detail(response):
+    if response is None:
+        return "The sync server did not return a response."
+
+    try:
+        payload = response.json()
+    except ValueError:
+        text = response.text.strip()
+        return text or f"{response.status_code} {response.reason}"
+
+    if isinstance(payload, dict):
+        detail = payload.get("detail") or payload.get("message")
+        if detail:
+            return str(detail)
+
+    return str(payload)
+
+
+def _mark_sync_complete(user_id):
+    mark_user_synced(user_id)
+    mark_cases_synced_for_user(user_id)
+    mark_biosecurity_checks_synced_for_user(user_id)
 
 
 def sync_with_server(user_id, server_url=None, timeout_seconds=15):
-    sync_package_bytes = build_sync_package(user_id)["bytes"]
-    payload = json.loads(sync_package_bytes.decode("utf-8"))
+    payload = _build_sync_payload(user_id)
     base_url = (server_url or DEFAULT_SYNC_SERVER_URL).rstrip("/")
+    allow_local_fallback = _is_local_sync_url(base_url)
 
     try:
         response = requests.post(
@@ -955,13 +1012,26 @@ def sync_with_server(user_id, server_url=None, timeout_seconds=15):
             timeout=timeout_seconds,
         )
         response.raise_for_status()
+        result = response.json()
+    except requests.HTTPError as exc:
+        error_detail = _extract_sync_error_detail(exc.response)
+        if allow_local_fallback and exc.response is not None and exc.response.status_code >= 500:
+            try:
+                result = import_sync_payload(payload)
+            except Exception as fallback_exc:
+                raise ValueError(f"Could not sync right now: {error_detail}") from fallback_exc
+        else:
+            raise ValueError(f"Could not sync right now: {error_detail}") from exc
     except requests.RequestException as exc:
-        raise ValueError(f"Could not sync right now: {exc}") from exc
+        if allow_local_fallback:
+            try:
+                result = import_sync_payload(payload)
+            except Exception as fallback_exc:
+                raise ValueError(f"Could not sync right now: {fallback_exc}") from fallback_exc
+        else:
+            raise ValueError(f"Could not sync right now: {exc}") from exc
 
-    result = response.json()
-    mark_user_synced(user_id)
-    mark_cases_synced_for_user(user_id)
-    mark_biosecurity_checks_synced_for_user(user_id)
+    _mark_sync_complete(user_id)
     return result
 
 

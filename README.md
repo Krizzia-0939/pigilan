@@ -41,7 +41,6 @@ Main working features right now:
 - PDF case export
 - biosecurity checklist
 - local-first saving in SQLite
-- manual sync package export/import
 - basic push sync with a sync server
 
 ## Important Notes
@@ -61,7 +60,7 @@ Main files your teammates should know:
 
 - [`backend.py`](/c:/Users/jacer/Downloads/pigilan/backend.py)
   Main application logic. Includes:
-  local account handling, case saving, risk assessment, alerts, PDF export, sync package generation, admin import, and push sync.
+  local account handling, case saving, risk assessment, alerts, PDF export, and push sync.
 
 - [`database.py`](/c:/Users/jacer/Downloads/pigilan/database.py)
   SQLite schema and database functions.
@@ -151,12 +150,12 @@ http://localhost:8501
 
 ## How To Run The Sync Server
 
-The sync server is only needed if you want `Sync Now` to work.
+The sync server is only needed if you want `Sync` to work.
 
 Open a second PowerShell terminal in the same project folder and run:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn sync_server:app --host 127.0.0.1 --port 8000
+python sync_server.py
 ```
 
 Health check:
@@ -184,7 +183,7 @@ Terminal 1:
 Terminal 2:
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn sync_server:app --host 127.0.0.1 --port 8000
+python sync_server.py
 ```
 
 ## Farmer Workflow
@@ -200,30 +199,13 @@ Terminal 2:
 
 ## Sync Workflow
 
-### Manual Sync
-
-Farmer side:
-
-1. Open `Account`
-2. Expand `Sync`
-3. Click `Download Sync Package`
-
-Admin side:
-
-1. Sign in as admin
-2. Open `Dashboard`
-3. Upload the farmer sync package
-4. Click `Import Sync Package`
-
 ### Push Sync
 
 Farmer side:
 
 1. Make sure the sync server is running
 2. Open `Account`
-3. Expand `Sync`
-4. Set `Sync Server URL`
-5. Click `Sync Now`
+3. Click `Sync`
 
 Current default local sync URL:
 
@@ -249,7 +231,6 @@ What works offline on the same device:
 - risk assessment
 - local case saving
 - local biosecurity saving
-- sync package export
 
 What is limited offline:
 

@@ -1,5 +1,7 @@
 import streamlit as st
 
+PWA_ASSET_VERSION = "20260420"
+
 
 def inject_pwa_support() -> None:
     st.iframe(
@@ -28,6 +30,8 @@ def inject_pwa_support() -> None:
 
           const parentWindow = window.parent;
           const parentDocument = parentWindow.document;
+          const pwaAssetVersion = "__PIGILAN_PWA_ASSET_VERSION__";
+          const isLocalHost = ["localhost", "127.0.0.1"].includes(parentWindow.location.hostname);
 
           function ensureTag(tagName, attrs) {
             const selector = Object.entries(attrs)
@@ -46,16 +50,16 @@ def inject_pwa_support() -> None:
 
           ensureTag("link", {
             rel: "manifest",
-            href: "/app/static/manifest.json"
+            href: `/app/static/manifest.json?v=${pwaAssetVersion}`
           });
           ensureTag("link", {
             rel: "icon",
             type: "image/svg+xml",
-            href: "/app/static/icon.svg"
+            href: `/app/static/icon.svg?v=${pwaAssetVersion}`
           });
           ensureTag("link", {
             rel: "apple-touch-icon",
-            href: "/app/static/icon.svg"
+            href: `/app/static/icon.svg?v=${pwaAssetVersion}`
           });
           ensureTag("meta", {
             name: "theme-color",
@@ -70,14 +74,40 @@ def inject_pwa_support() -> None:
             content: "default"
           });
 
-          if ("serviceWorker" in parentWindow.navigator) {
+          function clearPigilanCaches() {
+            if (!("caches" in parentWindow)) {
+              return Promise.resolve();
+            }
+
+            return parentWindow.caches.keys().then((keys) =>
+              Promise.all(
+                keys
+                  .filter((key) => key.startsWith("pigilan-static-"))
+                  .map((key) => parentWindow.caches.delete(key))
+              )
+            );
+          }
+
+          if ("serviceWorker" in parentWindow.navigator && isLocalHost) {
             parentWindow.navigator.serviceWorker
-              .register("/app/static/service-worker.js")
+              .getRegistrations()
+              .then((registrations) =>
+                Promise.all(
+                  registrations
+                    .filter((registration) => registration.scope.includes("/app/static/"))
+                    .map((registration) => registration.unregister())
+                )
+              )
+              .then(clearPigilanCaches)
+              .catch((error) => console.warn("Pigilan local cache cleanup failed", error));
+          } else if ("serviceWorker" in parentWindow.navigator) {
+            parentWindow.navigator.serviceWorker
+              .register(`/app/static/service-worker.js?v=${pwaAssetVersion}`)
               .catch((error) => console.warn("Pigilan service worker registration failed", error));
           }
         })();
         </script>
-        """,
+        """.replace("__PIGILAN_PWA_ASSET_VERSION__", PWA_ASSET_VERSION),
         height="content",
         width="content",
         tab_index=-1,
