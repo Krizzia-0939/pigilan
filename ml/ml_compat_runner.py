@@ -5,7 +5,11 @@ from pathlib import Path
 
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
-from ml_model_compat import (  # noqa: E402
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from ml.ml_model_compat import (  # noqa: E402
     format_prediction,
     load_or_build_model,
     load_class_names,

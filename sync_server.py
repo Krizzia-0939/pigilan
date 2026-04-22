@@ -8,7 +8,7 @@ except Exception:
     FastAPI = None
     HTTPException = None
 
-from backend import import_sync_payload
+from core.backend import import_sync_payload
 
 
 def _sync_payload(payload):

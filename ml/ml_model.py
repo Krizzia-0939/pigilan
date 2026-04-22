@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from threading import Lock, Thread
 
-from ml_model_compat import (
+from ml.ml_model_compat import (
     format_prediction,
     load_or_build_model,
     load_class_names,
@@ -15,8 +15,8 @@ from ml_model_compat import (
 )
 
 
-BASE_DIR = Path(__file__).resolve().parent
-COMPAT_RUNNER_PATH = BASE_DIR / "ml_compat_runner.py"
+BASE_DIR = Path(__file__).resolve().parent.parent
+COMPAT_RUNNER_PATH = Path(__file__).resolve().with_name("ml_compat_runner.py")
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 FALLBACK_TIMEOUT_SECONDS = int(os.environ.get("PIGILAN_ML_FALLBACK_TIMEOUT_SECONDS", "600"))

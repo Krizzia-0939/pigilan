@@ -1,12 +1,14 @@
 # Pigilan
 
-Pigilan is a Streamlit-based ASF monitoring system for pig farmers. It helps users:
+Pigilan is a Streamlit-based ASF monitoring app for pig farmers and field users. It is built around a simple workflow: check the pig, save the report locally, and sync later when internet is available.
+
+Main things it can do:
 
 - create local farmer accounts
-- check pigs for possible ASF risk
-- upload a pig image for ML-based detection
-- save cases locally
-- view nearby case alerts
+- assess pigs for possible ASF risk
+- upload a pig image for model-based screening
+- save reports locally in SQLite
+- review nearby case alerts
 - track farm biosecurity
 - export or sync records later when internet is available
 
@@ -15,7 +17,7 @@ This project is currently built for a local-first workflow using:
 - Frontend: Streamlit
 - Backend: Python
 - Database: SQLite
-- ML Model: Teachable Machine export (`keras_model.h5`)
+- ML Model: Teachable Machine export stored in `models/`
 - Sync Server: FastAPI
 
 ## Current App Flow
@@ -45,58 +47,57 @@ Main working features right now:
 
 ## Important Notes
 
-- The app is offline-first for the core farmer workflow, but it still runs through Streamlit.
-- On local development, the Streamlit server must be running for the app to open.
+- The app is local-first for the core farmer workflow, but it still runs through Streamlit.
+- On local development, the Streamlit server must be running for the app to open in the browser.
 - The map background uses online tiles, so map tiles may be blank without internet.
 - GPS and manual coordinates can still be used even if map tiles do not load.
-- The PWA support is basic/best-effort because this is still a Streamlit app.
+- The PWA support is limited because this is still a Streamlit app, not a native mobile app.
 
 ## Folder Guide
 
 Main files your teammates should know:
 
-- [`app.py`](/c:/Users/jacer/Downloads/pigilan/app.py)
+- [`app.py`](/c:/Users/jacer/Downloads/New/pigilan/app.py)
   Main Streamlit entry file. Handles top navigation and loads the page views.
 
-- [`backend.py`](/c:/Users/jacer/Downloads/pigilan/backend.py)
-  Main application logic. Includes:
-  local account handling, case saving, risk assessment, alerts, PDF export, and push sync.
+- [`core/`](/c:/Users/jacer/Downloads/New/pigilan/core)
+  Core application logic:
+  `backend.py`, `database.py`, `pdf_utils.py`
 
-- [`database.py`](/c:/Users/jacer/Downloads/pigilan/database.py)
-  SQLite schema and database functions.
+- [`shared/`](/c:/Users/jacer/Downloads/New/pigilan/shared)
+  Shared helpers for assets, PWA injection, and location picking.
 
-- [`ml_model.py`](/c:/Users/jacer/Downloads/pigilan/ml_model.py)
-  Loads the Teachable Machine model and runs image prediction.
+- [`ml/`](/c:/Users/jacer/Downloads/New/pigilan/ml)
+  ML runtime code:
+  `ml_model.py`, `ml_model_compat.py`, `ml_compat_runner.py`
 
-- [`location_picker.py`](/c:/Users/jacer/Downloads/pigilan/location_picker.py)
-  GPS, map click, and manual coordinate entry logic.
+- [`models/`](/c:/Users/jacer/Downloads/New/pigilan/models)
+  Model assets:
+  `keras_model.h5`, `compat_model.keras`, `labels.txt`
 
-- [`pdf_utils.py`](/c:/Users/jacer/Downloads/pigilan/pdf_utils.py)
-  PDF report generation helpers.
+- [`components/streamlit_js_eval/`](/c:/Users/jacer/Downloads/New/pigilan/components/streamlit_js_eval)
+  Custom Streamlit component used for browser geolocation.
 
-- [`sync_server.py`](/c:/Users/jacer/Downloads/pigilan/sync_server.py)
-  FastAPI server for receiving sync pushes.
+- [`sync_server.py`](/c:/Users/jacer/Downloads/New/pigilan/sync_server.py)
+  Sync server entry point.
 
-- [`requirements.txt`](/c:/Users/jacer/Downloads/pigilan/requirements.txt)
+- [`requirements.txt`](/c:/Users/jacer/Downloads/New/pigilan/requirements.txt)
   Python dependencies.
 
-- [`pigilan.db`](/c:/Users/jacer/Downloads/pigilan/pigilan.db)
+- [`pigilan.db`](/c:/Users/jacer/Downloads/New/pigilan/pigilan.db)
   Local SQLite database file.
 
-- [`keras_model.h5`](/c:/Users/jacer/Downloads/pigilan/keras_model.h5)
-  ML model file.
-
-- [`labels.txt`](/c:/Users/jacer/Downloads/pigilan/labels.txt)
-  Class labels for the model.
-
-- [`views/`](/c:/Users/jacer/Downloads/pigilan/views)
+- [`views/`](/c:/Users/jacer/Downloads/New/pigilan/views)
   Streamlit page files:
   `home.py`, `about.py`, `asf_detection.py`, `cases.py`, `account.py`, `biosecurity.py`
 
-- [`static/`](/c:/Users/jacer/Downloads/pigilan/static)
+- [`assets/`](/c:/Users/jacer/Downloads/New/pigilan/assets)
+  Local images used by the UI.
+
+- [`static/`](/c:/Users/jacer/Downloads/New/pigilan/static)
   PWA-related files like manifest, icon, and service worker.
 
-- [`.streamlit/config.toml`](/c:/Users/jacer/Downloads/pigilan/.streamlit/config.toml)
+- [`.streamlit/config.toml`](/c:/Users/jacer/Downloads/New/pigilan/.streamlit/config.toml)
   Enables static serving for PWA assets.
 
 ## Setup Requirements
@@ -105,7 +106,7 @@ Recommended Python version:
 
 - Python `3.11`
 
-Do not use Python `3.14` for this project because some dependencies like TensorFlow/Streamlit-related packages may fail.
+Avoid newer unsupported runtimes for this repo. The TensorFlow stack in `requirements.txt` is aligned to Python `3.11`.
 
 ## First-Time Setup
 
@@ -133,6 +134,8 @@ Install dependencies:
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+If you prefer the batch file launcher, you can also double-click [`run_app.bat`](/c:/Users/jacer/Downloads/New/pigilan/run_app.bat). It now checks for a usable Python runtime and tells you what is missing instead of failing silently.
 
 ## How To Run The Main App
 
@@ -274,17 +277,17 @@ Once deployed, sync becomes easier because:
 
 If your teammates are working on frontend/design, they should mainly look at:
 
-- [`app.py`](/c:/Users/jacer/Downloads/pigilan/app.py)
-- [`views/home.py`](/c:/Users/jacer/Downloads/pigilan/views/home.py)
-- [`views/asf_detection.py`](/c:/Users/jacer/Downloads/pigilan/views/asf_detection.py)
-- [`views/cases.py`](/c:/Users/jacer/Downloads/pigilan/views/cases.py)
-- [`views/account.py`](/c:/Users/jacer/Downloads/pigilan/views/account.py)
+- [`app.py`](/c:/Users/jacer/Downloads/New/pigilan/app.py)
+- [`views/home.py`](/c:/Users/jacer/Downloads/New/pigilan/views/home.py)
+- [`views/asf_detection.py`](/c:/Users/jacer/Downloads/New/pigilan/views/asf_detection.py)
+- [`views/cases.py`](/c:/Users/jacer/Downloads/New/pigilan/views/cases.py)
+- [`views/account.py`](/c:/Users/jacer/Downloads/New/pigilan/views/account.py)
 
 If they are changing backend/database behavior, they should review:
 
-- [`backend.py`](/c:/Users/jacer/Downloads/pigilan/backend.py)
-- [`database.py`](/c:/Users/jacer/Downloads/pigilan/database.py)
-- [`sync_server.py`](/c:/Users/jacer/Downloads/pigilan/sync_server.py)
+- [`core/backend.py`](/c:/Users/jacer/Downloads/New/pigilan/core/backend.py)
+- [`core/database.py`](/c:/Users/jacer/Downloads/New/pigilan/core/database.py)
+- [`sync_server.py`](/c:/Users/jacer/Downloads/New/pigilan/sync_server.py)
 
 ## Common Problems
 
@@ -330,6 +333,17 @@ This is expected when internet is weak or unavailable. Use:
 
 Use Python `3.11` and recreate `.venv` if needed.
 
+### 6. Double-clicking `run_app.bat` does nothing
+
+Usually means there is no working Python runtime on the machine yet, or `streamlit` is not installed in the selected runtime.
+
+Fix:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
 ## Files That Can Usually Be Ignored In Handoff
 
 - `.venv/`
@@ -340,18 +354,17 @@ Use Python `3.11` and recreate `.venv` if needed.
 Share the whole project except `.venv` if you want a lighter handoff:
 
 - `app.py`
-- `backend.py`
-- `database.py`
-- `location_picker.py`
-- `ml_model.py`
-- `pdf_utils.py`
+- `core/`
+- `shared/`
+- `ml/`
+- `models/`
+- `components/`
 - `sync_server.py`
 - `requirements.txt`
 - `README.md`
-- `labels.txt`
-- `keras_model.h5`
 - `pigilan.db`
 - `views/`
+- `assets/`
 - `static/`
 - `.streamlit/`
 

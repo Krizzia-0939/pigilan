@@ -1,10 +1,10 @@
-import streamlit as st
+import streamlit.components.v1 as components
 
 PWA_ASSET_VERSION = "20260420"
 
 
 def inject_pwa_support() -> None:
-    st.iframe(
+    components.html(
         """
         <style>
         html, body {
@@ -108,7 +108,7 @@ def inject_pwa_support() -> None:
         })();
         </script>
         """.replace("__PIGILAN_PWA_ASSET_VERSION__", PWA_ASSET_VERSION),
-        height="content",
-        width="content",
-        tab_index=-1,
+        height=0,
+        width=0,
+        scrolling=False,
     )

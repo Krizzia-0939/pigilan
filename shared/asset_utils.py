@@ -2,11 +2,8 @@ import base64
 from pathlib import Path
 
 
-ROOT_DIR = Path(__file__).resolve().parent
-ASSET_DIRS = (
-    ROOT_DIR / "assets",
-    ROOT_DIR / "Assets",
-)
+ROOT_DIR = Path(__file__).resolve().parent.parent
+ASSET_DIRS = (ROOT_DIR / "assets",)
 
 
 def resolve_asset_path(file_name: str) -> Path:

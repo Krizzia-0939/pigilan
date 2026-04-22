@@ -9,7 +9,7 @@ import secrets
 import uuid
 import requests
 
-from database import (
+from core.database import (
     create_alert,
     create_biosecurity_check,
     create_case,
@@ -42,10 +42,10 @@ from database import (
     update_user_password,
     update_user_profile,
 )
-from pdf_utils import build_simple_pdf
+from core.pdf_utils import build_simple_pdf
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DB_FILE_PATH = PROJECT_ROOT / "pigilan.db"
 UPLOADS_DIR = PROJECT_ROOT / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)

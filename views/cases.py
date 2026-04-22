@@ -8,7 +8,7 @@ try:
 except Exception:  # pragma: no cover - fallback if pandas is unavailable locally
     pd = None
 
-from backend import (
+from core.backend import (
     build_case_report_pdf,
     distance_km,
     edit_case,

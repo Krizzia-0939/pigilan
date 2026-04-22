@@ -9,7 +9,7 @@ except Exception:
     st_folium = None
 
 try:
-    from streamlit_js_eval import get_geolocation
+    from components.streamlit_js_eval import get_geolocation
 except Exception as exc:
     get_geolocation = None
     _STREAMLIT_JS_EVAL_IMPORT_ERROR = exc

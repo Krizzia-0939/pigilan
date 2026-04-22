@@ -5,10 +5,10 @@ import numpy as np
 from PIL import Image, ImageOps
 
 
-BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "keras_model.h5"
-MODEL_CACHE_PATH = BASE_DIR / "compat_model.keras"
-LABELS_PATH = BASE_DIR / "labels.txt"
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODEL_PATH = BASE_DIR / "models" / "keras_model.h5"
+MODEL_CACHE_PATH = BASE_DIR / "models" / "compat_model.keras"
+LABELS_PATH = BASE_DIR / "models" / "labels.txt"
 IMAGE_SIZE = (224, 224)
 MIN_CLEAR_CONFIDENCE = 70.0
 

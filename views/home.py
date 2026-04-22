@@ -1,7 +1,7 @@
 from html import escape
 
 import streamlit as st
-from asset_utils import build_local_image_data_uri, resolve_asset_path
+from shared.asset_utils import build_local_image_data_uri, resolve_asset_path
 
 HERO_BACKGROUND_PHOTO = resolve_asset_path("BG-PHOTO.png")
 RISK_ASSESSMENT_PHOTO = resolve_asset_path("risk-assessment-photo.png")
@@ -14,28 +14,28 @@ FEATURE_CARDS = [
     {
         "accent": "risk",
         "title": "ASF Risk Assessment",
-        "copy": "Evaluate symptoms and receive a risk level.",
+        "copy": "Answer the symptom checklist and get a clear risk summary for the pig you checked.",
         "image_data_uri": build_local_image_data_uri(RISK_ASSESSMENT_PHOTO),
         "image_alt": "ASF risk assessment guide",
     },
     {
         "accent": "image",
         "title": "Image-Based Detection",
-        "copy": "Upload pig photos for ASF detection.",
+        "copy": "Upload a pig photo and review the model's screening result alongside your notes.",
         "image_data_uri": build_local_image_data_uri(IMAGE_BASED_DETECTION_PHOTO),
         "image_alt": "Image-based ASF detection",
     },
     {
         "accent": "guide",
         "title": "Biosecurity Guidance",
-        "copy": "Follow recommended practices for isolation, sanitation, and disease prevention.",
+        "copy": "Review practical reminders for isolation, sanitation, and reducing farm-to-farm spread.",
         "image_data_uri": build_local_image_data_uri(BIOSECURITY_GUIDANCE_PHOTO),
         "image_alt": "Biosecurity guidance",
     },
     {
         "accent": "alert",
         "title": "Nearby Case Alerts",
-        "copy": "Get notified about possible ASF cases nearby.",
+        "copy": "See nearby reports and keep an eye on cases that may need follow-up in your area.",
         "image_data_uri": build_local_image_data_uri(NEARBY_CASE_ALERTS_PHOTO),
         "image_alt": "Nearby case alerts",
     },
@@ -46,23 +46,23 @@ HOME_HERO_BACKGROUND_DATA_URI = build_local_image_data_uri(HERO_BACKGROUND_PHOTO
 FLOW_STEPS = [
     {
         "step": "1",
-        "title": "Create an account",
-        "copy": "Set up access to save and manage reports.",
+        "title": "Create your account",
+        "copy": "Save reports under your farm profile so you can return to them later.",
     },
     {
         "step": "2",
-        "title": "Check the pig",
-        "copy": "Follow guided questions and record symptoms.",
+        "title": "Record the case",
+        "copy": "Answer the checklist, add a photo, and confirm the farm location.",
     },
     {
         "step": "3",
-        "title": "Save offline",
-        "copy": "Keep reports on your device while offline.",
+        "title": "Save it on the device",
+        "copy": "Keep the report locally even if the connection is weak or unavailable.",
     },
     {
         "step": "4",
         "title": "Sync later",
-        "copy": "Upload your records once internet is available.",
+        "copy": "Send records to the server later when you have a stable internet connection.",
     },
 ]
 
@@ -675,19 +675,7 @@ def render_flow_steps():
 
 
 def render_footer():
-    st.markdown(
-        """
-        <div class="home-footer">
-            <div class="home-footer-links">
-                <span>About</span>
-                <span>Privacy</span>
-                <span>Support</span>
-            </div>
-            <div>Version 1.0</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    return
 
 
 inject_home_styles()
@@ -709,18 +697,18 @@ with st.container(border=True):
         <section class="home-hero-card">
             <div class="home-hero">
                 <div class="home-hero-copy">
-                    <div class="home-hero-kicker">Offline-Ready ASF Monitoring</div>
+                    <div class="home-hero-kicker">Built for field use</div>
                     <h1 class="home-hero-title">
-                        <span>Early Detection of</span>
-                        <span>African Swine Fever</span>
-                        <span>Starts Here.</span>
+                        <span>Record possible</span>
+                        <span>ASF cases</span>
+                        <span>without the clutter.</span>
                     </h1>
-                    <p class="home-hero-highlight">Detect Early. Act Fast. Protect Your Herd.</p>
+                    <p class="home-hero-highlight">One place for symptoms, photos, location, and next steps.</p>
                     <p class="home-hero-copy-text">
-                        Identify ASF symptoms, receive risk assessments, and access guidance to protect your pigs and
-                        prevent disease spread, even without internet access.
+                        Pigilan helps farmers and caretakers document suspicious cases, review the photo screening
+                        result, and keep reports organized on the device before syncing them later.
                     </p>
-                    <p class="home-hero-note">Built for offline-ready farm monitoring so your reports stay useful even with limited internet.</p>
+                    <p class="home-hero-note">Use it during farm visits, then upload records once your connection is back.</p>
                 </div>
                 {hero_visual_markup}
             </div>
@@ -731,11 +719,11 @@ with st.container(border=True):
 
     primary_col, secondary_col = st.columns(2, gap="small")
     with primary_col:
-        if st.button("Start Health Assessment", key="home_cta_primary", use_container_width=True):
+        if st.button("Start a Pig Check", key="home_cta_primary", use_container_width=True):
             st.session_state.page = "Health Assessment"
             st.rerun()
     with secondary_col:
-        secondary_label = "Open My Reports" if is_logged_in else "Create Account"
+        secondary_label = "View Saved Reports" if is_logged_in else "Set Up an Account"
         if st.button(secondary_label, key="home_cta_secondary", use_container_width=True):
             if is_logged_in:
                 st.session_state.page = "My Reports"
@@ -747,8 +735,8 @@ with st.container(border=True):
 st.markdown(
     """
     <div class="home-section-intro">
-        <h2>Protect Your Farm with Smart Tools</h2>
-        <p>Key features to help monitor, assess, and manage pig health.</p>
+        <h2>What you can do inside Pigilan</h2>
+        <p>Core tools for checking pigs, saving reports, and reviewing case information later.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -756,7 +744,7 @@ st.markdown(
 render_feature_cards()
 
 st.markdown(
-    "<p class='home-sync-note'>Works offline. Sync your reports when internet is available.</p>",
+    "<p class='home-sync-note'>Reports stay on the device first. Sync them when internet is available.</p>",
     unsafe_allow_html=True,
 )
 
@@ -765,7 +753,7 @@ with st.container(border=True):
         """
         <div class="home-flow-card">
             <div class="home-section-intro" style="margin-top: 0; margin-bottom: 0.5rem;">
-                <h2>How PIGilan Works</h2>
+                <h2>Typical workflow</h2>
             </div>
         </div>
         """,

@@ -2,13 +2,13 @@ from html import escape
 
 import streamlit as st
 
-from backend import distance_km, submit_assessment
-from location_picker import (
+from core.backend import distance_km, submit_assessment
+from shared.location_picker import (
     DEFAULT_LATITUDE,
     DEFAULT_LONGITUDE,
     render_point_location_picker,
 )
-from ml_model import predict_uploaded_image, start_model_warmup
+from ml.ml_model import predict_uploaded_image, start_model_warmup
 
 
 MAX_IMAGE_SIZE_BYTES = 500 * 1024 * 1024

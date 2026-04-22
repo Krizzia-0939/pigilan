@@ -1,7 +1,7 @@
 import streamlit as st
 import runpy
-from asset_utils import ROOT_DIR, build_local_image_data_uri, resolve_asset_path
-from pwa import inject_pwa_support
+from shared.asset_utils import ROOT_DIR, build_local_image_data_uri, resolve_asset_path
+from shared.pwa import inject_pwa_support
 
 PIGILAN_LOGO = resolve_asset_path("PIGilan-Logo.png")
 PIGILAN_ICON = ROOT_DIR / "static" / "icon.svg"
@@ -99,6 +99,54 @@ def inject_shell_styles():
         }
 
         [data-testid="stCaptionContainer"] {
+            color: var(--pigilan-muted);
+        }
+
+        .stTextInput label p,
+        .stTextArea label p,
+        .stNumberInput label p,
+        .stSelectbox label p,
+        .stMultiSelect label p,
+        .stDateInput label p,
+        .stFileUploader label p,
+        .stRadio label p,
+        .stCheckbox label p,
+        .stMarkdown,
+        .stMarkdown p,
+        .stAlert,
+        .stAlert p {
+            color: var(--pigilan-text);
+        }
+
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stNumberInput"] input,
+        div[data-testid="stDateInput"] input,
+        div[data-testid="stSelectbox"] input,
+        div[data-testid="stMultiSelect"] input,
+        div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+        div[data-testid="stMultiSelect"] div[data-baseweb="select"] > div,
+        div[data-testid="stFileUploader"] section,
+        section[data-testid="stFileUploaderDropzone"],
+        div[data-testid="stFileUploaderDropzone"] {
+            color: var(--pigilan-text);
+        }
+
+        div[data-testid="stTextInput"] input::placeholder,
+        div[data-testid="stTextArea"] textarea::placeholder,
+        div[data-testid="stNumberInput"] input::placeholder,
+        div[data-testid="stDateInput"] input::placeholder {
+            color: var(--pigilan-muted);
+            opacity: 1;
+        }
+
+        div[data-testid="stSelectbox"] svg,
+        div[data-testid="stMultiSelect"] svg,
+        div[data-testid="stDateInput"] svg,
+        div[data-testid="stFileUploader"] small,
+        div[data-testid="stFileUploader"] span,
+        div[data-testid="stFileUploaderDropzone"] small,
+        div[data-testid="stFileUploaderDropzone"] span {
             color: var(--pigilan-muted);
         }
 

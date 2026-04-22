@@ -5,19 +5,19 @@ import streamlit as st
 
 ABOUT_HIGHLIGHTS = [
     {
-        "label": "Early Detection",
-        "title": "Catch warning signs before they spread.",
-        "copy": "Pigilan combines a symptom checklist and pig photo screening to help farmers act faster when ASF may be present.",
+        "label": "Case Screening",
+        "title": "Capture warning signs in one report.",
+        "copy": "Pigilan combines a symptom checklist and photo screening so suspected cases are documented in a consistent way.",
     },
     {
         "label": "Offline Saving",
-        "title": "Keep records even without internet.",
-        "copy": "Assessments and reports can be saved locally first so field work does not stop when signal is weak.",
+        "title": "Keep working even with weak signal.",
+        "copy": "Assessments are saved on the device first, which makes the app more practical during farm visits.",
     },
     {
-        "label": "Farm Guidance",
-        "title": "Turn results into next steps.",
-        "copy": "Each saved report includes a risk level and recommended action to support isolation, monitoring, and farm protection.",
+        "label": "Follow-up",
+        "title": "Keep the next step easy to find.",
+        "copy": "Each report keeps the risk level, notes, and recommended action together for later review or export.",
     },
 ]
 
@@ -25,22 +25,22 @@ ABOUT_FLOW = [
     {
         "step": "1",
         "title": "Sign in or create an account",
-        "copy": "Set up your farm profile and store assessments under your name.",
+        "copy": "Create a farm profile so your assessments stay tied to your account.",
     },
     {
         "step": "2",
         "title": "Check the pig",
-        "copy": "Record symptoms, upload a pig photo, and review the farm location.",
+        "copy": "Record symptoms, upload a photo, and confirm the farm location before saving.",
     },
     {
         "step": "3",
         "title": "Save the assessment",
-        "copy": "Keep the report on your device immediately, even when you are offline.",
+        "copy": "Store the report on the device right away, even when internet is unavailable.",
     },
     {
         "step": "4",
         "title": "Review and sync later",
-        "copy": "Open My Reports for follow-up, exports, and later syncing when internet is available.",
+        "copy": "Open My Reports for follow-up, exports, and syncing once the connection is stable.",
     },
 ]
 
@@ -640,11 +640,11 @@ st.markdown(
 
 hero_action_col1, hero_action_col2, _ = st.columns([1, 1, 2], gap="small")
 with hero_action_col1:
-    if st.button("Open Health Assessment", key="about_open_assessment", use_container_width=True):
+    if st.button("Start a Pig Check", key="about_open_assessment", use_container_width=True):
         st.session_state.page = "Health Assessment"
         st.rerun()
 with hero_action_col2:
-    if st.button("Open My Reports", key="about_open_reports", use_container_width=True):
+    if st.button("View Saved Reports", key="about_open_reports", use_container_width=True):
         st.session_state.page = "My Reports"
         st.rerun()
 
@@ -729,11 +729,3 @@ with st.container(border=True):
         unsafe_allow_html=True,
     )
     render_flow()
-    st.markdown(
-        """
-        <p class="about-footer-note">
-            Version 1.0 focuses on offline-friendly recording, case review, and practical ASF monitoring support for farms.
-        </p>
-        """,
-        unsafe_allow_html=True,
-    )

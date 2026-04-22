@@ -1,6 +1,6 @@
 import streamlit as st
 
-from backend import (
+from core.backend import (
     BIOSECURITY_ITEMS,
     save_biosecurity_check,
 )

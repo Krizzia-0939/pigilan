@@ -3,7 +3,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from backend import (
+from core.backend import (
     BIOSECURITY_ITEMS,
     edit_user_profile,
     get_admin_dashboard_data,
@@ -169,6 +169,7 @@ def inject_auth_styles():
             border-radius: 12px;
             border: 1px solid rgba(216, 200, 182, 0.96);
             background: rgba(255, 252, 249, 0.96);
+            color: #4b4137;
         }
 
         div[data-testid="stTextInput"] input::placeholder {
@@ -912,6 +913,7 @@ def inject_admin_styles():
             border-radius: 12px;
             border-color: rgba(216, 200, 182, 0.95);
             background: rgba(255, 252, 248, 0.96);
+            color: #4b4137;
         }
 
         div[data-testid="stButton"] > button,
@@ -1004,19 +1006,7 @@ def build_admin_case_table_rows(cases):
 
 
 def render_admin_footer():
-    st.markdown(
-        """
-        <div class="admin-footer">
-            <div class="admin-footer-links">
-                <span>About</span>
-                <span>Privacy</span>
-                <span>Support</span>
-            </div>
-            <div>Version 1.0</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    return
 
 
 if st.session_state.user:
@@ -1399,20 +1389,6 @@ if st.session_state.user:
                 st.success("Your details were updated successfully.")
                 st.rerun()
 
-    st.markdown(
-        """
-        <div class="auth-footer">
-            <div class="auth-footer-links">
-                <span>About</span>
-                <span>Privacy</span>
-                <span>Support</span>
-            </div>
-            <div>Version 1.0</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
 else:
     inject_auth_styles()
     auth_mode = get_auth_mode()
@@ -1438,8 +1414,8 @@ else:
                         <p class="auth-brand-subtitle">Local-first ASF monitoring for farmers</p>
                     </div>
                 </div>
-                <p class="auth-section-title">Sign Up</p>
-                <p class="auth-section-copy">Please fill in the information below to create your account.</p>
+                <p class="auth-section-title">Create an account</p>
+                <p class="auth-section-copy">Add your farm details below so Pigilan can save reports under your profile.</p>
                 """,
                 unsafe_allow_html=True,
             )
@@ -1529,8 +1505,8 @@ else:
                         <p class="auth-brand-subtitle">Local-first ASF monitoring for farmers</p>
                     </div>
                 </div>
-                <p class="auth-section-title">Sign In or Sign Up</p>
-                <p class="auth-section-copy">Please sign in first before running an ASF assessment.</p>
+                <p class="auth-section-title">Sign in to continue</p>
+                <p class="auth-section-copy">Use your account to open saved reports, update farm details, and run a pig check.</p>
                 """,
                 unsafe_allow_html=True,
             )
@@ -1563,16 +1539,3 @@ else:
                 else:
                     st.error("Invalid username or password.")
 
-    st.markdown(
-        """
-        <div class="auth-footer">
-            <div class="auth-footer-links">
-                <span>About</span>
-                <span>Privacy</span>
-                <span>Support</span>
-            </div>
-            <div>Version 1.0</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
