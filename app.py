@@ -5,7 +5,7 @@ from shared.pwa import inject_pwa_support
 
 PIGILAN_LOGO = resolve_asset_path("PIGilan-Logo.png")
 PIGILAN_ICON = ROOT_DIR / "static" / "icon.svg"
-
+#hello
 page_config = {
     "page_title": "Pigilan",
     "layout": "wide",
