@@ -42,6 +42,10 @@ def _apply_selected_point(
     st.session_state[longitude_input_key] = rounded_longitude
 
 
+def _build_coordinate_signature(latitude, longitude):
+    return f"{round(float(latitude), 6):.6f},{round(float(longitude), 6):.6f}"
+
+
 def _build_selected_pin_html():
     return """
     <div style="position: relative; width: 26px; height: 26px;">
@@ -83,6 +87,7 @@ def render_point_location_picker(
     gps_request_key = f"{session_prefix}_gps_requested"
     gps_accuracy_key = f"{session_prefix}_gps_accuracy"
     pending_map_point_key = f"{session_prefix}_pending_map_point"
+    processed_map_click_key = f"{session_prefix}_processed_map_click"
     if latitude_key not in st.session_state:
         st.session_state[latitude_key] = round(float(initial_latitude), 6)
     if longitude_key not in st.session_state:
@@ -97,6 +102,8 @@ def render_point_location_picker(
         st.session_state[longitude_input_key] = st.session_state[longitude_key]
     if pending_map_point_key not in st.session_state:
         st.session_state[pending_map_point_key] = None
+    if processed_map_click_key not in st.session_state:
+        st.session_state[processed_map_click_key] = None
 
     pending_map_point = st.session_state.get(pending_map_point_key)
     if pending_map_point:
@@ -222,16 +229,24 @@ def render_point_location_picker(
                 if last_clicked:
                     clicked_latitude = round(float(last_clicked["lat"]), 6)
                     clicked_longitude = round(float(last_clicked["lng"]), 6)
+                    click_signature = _build_coordinate_signature(
+                        clicked_latitude,
+                        clicked_longitude,
+                    )
                     if (
-                        clicked_latitude != selected_latitude
-                        or clicked_longitude != selected_longitude
+                        click_signature != st.session_state[processed_map_click_key]
+                        and (
+                            clicked_latitude != selected_latitude
+                            or clicked_longitude != selected_longitude
+                        )
                     ):
+                        st.session_state[processed_map_click_key] = click_signature
                         st.session_state[pending_map_point_key] = {
                             "latitude": clicked_latitude,
                             "longitude": clicked_longitude,
                         }
                         st.rerun()
-                st.caption("Click the map to place the farm pin, or type the exact coordinates on the left.")
+                st.caption("Click anywhere on the map to place the farm pin, or use your current location and manual coordinates on the left.")
             else:
                 st.map(
                     pd.DataFrame(
