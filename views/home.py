@@ -753,7 +753,7 @@ with st.container(border=True):
         """
         <div class="home-flow-card">
             <div class="home-section-intro" style="margin-top: 0; margin-bottom: 0.5rem;">
-                <h2>Typical workflow</h2>
+                <h2>PIGilan workflow</h2>
             </div>
         </div>
         """,
