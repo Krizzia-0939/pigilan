@@ -15,6 +15,7 @@ from core.backend import (
     save_biosecurity_check,
     sync_with_server,
 )
+from shared.navigation import consume_post_auth_redirect, scroll_to_target_if_needed
 
 
 if "user" not in st.session_state:
@@ -1269,6 +1270,9 @@ if st.session_state.user:
             unsafe_allow_html=True,
         )
 
+    st.markdown("<div id='account-biosecurity' style='scroll-margin-top: 1rem;'></div>", unsafe_allow_html=True)
+    scroll_to_target_if_needed("account-biosecurity")
+
     with st.container(border=True):
         header_col, sync_col = st.columns([4, 1.15], gap="medium")
         with header_col:
@@ -1489,7 +1493,7 @@ else:
             """
             <div class="auth-hero">
                 <h1>Sign In or Sign Up</h1>
-                <p>Please sign in first before running an ASF assessment.</p>
+                <p>Please sign in first before opening this feature in Pigilan.</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1534,6 +1538,7 @@ else:
                 user = login_user(username.strip(), password)
                 if user:
                     st.session_state.user = user
+                    consume_post_auth_redirect()
                     st.success("Sign in successful.")
                     st.rerun()
                 else:

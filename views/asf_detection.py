@@ -8,6 +8,7 @@ from shared.location_picker import (
     DEFAULT_LONGITUDE,
     render_point_location_picker,
 )
+from shared.navigation import scroll_to_target_if_needed
 from ml.ml_model import predict_uploaded_image, start_model_warmup
 
 
@@ -739,6 +740,9 @@ with st.container(border=True):
         caption_text="Use the current location button or review the coordinates of this farm check below.",
         show_section_header=False,
     )
+
+st.markdown("<div id='assessment-upload-photo' style='scroll-margin-top: 1rem;'></div>", unsafe_allow_html=True)
+scroll_to_target_if_needed("assessment-upload-photo")
 
 with st.container(border=True):
     render_step_bar("Step 4: Upload a Pig Photo")
