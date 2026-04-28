@@ -1,6 +1,7 @@
 import streamlit as st
 import runpy
 from shared.asset_utils import ROOT_DIR, build_local_image_data_uri, resolve_asset_path
+from shared.navigation import clear_navigation_state, navigate_to_feature
 from shared.pwa import inject_pwa_support
 
 PIGILAN_LOGO = resolve_asset_path("PIGilan-Logo.png")
@@ -46,6 +47,10 @@ def inject_shell_styles():
 
         .main .block-container {
             max-width: 1120px;
+            padding:
+                clamp(0.9rem, 2.3vw, 1.35rem)
+                clamp(0.85rem, 2.8vw, 1.75rem)
+                clamp(2rem, 5vw, 3.1rem);
         }
 
         .pigilan-header-card {
@@ -155,6 +160,7 @@ def inject_shell_styles():
             border: 1px solid rgba(216, 200, 182, 0.96);
             border-radius: 26px;
             box-shadow: var(--pigilan-shadow);
+            overflow: hidden;
         }
 
         div[data-testid="stRadio"] > div {
@@ -215,16 +221,37 @@ def inject_shell_styles():
         }
 
         div[data-testid="stButton"] > button {
+            min-height: 3rem;
+            padding: 0.72rem 1rem;
             background: linear-gradient(135deg, var(--pigilan-olive-deep), var(--pigilan-olive));
             color: #fff;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.98rem;
+            font-weight: 700;
+            line-height: 1.2;
+            text-align: center;
+            white-space: normal;
             box-shadow: 0 10px 22px rgba(89, 96, 71, 0.18);
+            transition:
+                transform 160ms ease,
+                box-shadow 160ms ease,
+                background 160ms ease;
         }
 
         div[data-testid="stButton"] > button:hover {
             background: linear-gradient(135deg, #50573f, #666d53);
             color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(89, 96, 71, 0.22);
+        }
+
+        div[data-testid="stButton"] > button:focus-visible {
+            outline: 3px solid rgba(109, 115, 89, 0.24);
+            outline-offset: 2px;
         }
 
         .pigilan-nav-status {
@@ -285,6 +312,27 @@ def inject_shell_styles():
                 gap: 0.9rem;
             }
         }
+
+        @media (max-width: 820px) {
+            [data-testid="stHorizontalBlock"] {
+                flex-wrap: wrap;
+                gap: 0.85rem;
+            }
+
+            [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+                min-width: 100% !important;
+                flex: 1 1 100% !important;
+            }
+
+            .pigilan-header-card {
+                min-height: auto;
+                padding: 0.1rem 0;
+            }
+
+            .pigilan-nav-status {
+                text-align: left;
+            }
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -299,11 +347,46 @@ PAGE_ALIASES = {
     "Account": "My Account",
 }
 
+
+def get_query_param_value(name):
+    try:
+        value = st.query_params.get(name)
+    except Exception:
+        try:
+            value = st.experimental_get_query_params().get(name)
+        except Exception:
+            value = None
+
+    if isinstance(value, list):
+        return value[0] if value else None
+    return value
+
+
+def clear_query_params():
+    try:
+        st.query_params.clear()
+    except Exception:
+        try:
+            st.experimental_set_query_params()
+        except Exception:
+            pass
+
+
+def handle_feature_link_navigation():
+    feature_target = get_query_param_value("feature")
+    if not feature_target:
+        return
+
+    clear_query_params()
+    if navigate_to_feature(feature_target):
+        st.rerun()
+
 # Initialize page
 if "page" not in st.session_state:
     st.session_state.page = "Home"
 
 st.session_state.page = PAGE_ALIASES.get(st.session_state.page, st.session_state.page)
+handle_feature_link_navigation()
 
 user = st.session_state.get("user")
 is_admin = bool(user and user.get("role") == "admin")
@@ -318,6 +401,7 @@ def logout_current_user():
     st.session_state.nav_logout_confirm = False
     st.session_state.account_logout_confirm = False
     st.session_state.admin_logout_confirm = False
+    clear_navigation_state()
 
 
 def sync_page_from_top_nav():
