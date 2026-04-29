@@ -1255,6 +1255,7 @@ if st.session_state.user:
                     unsafe_allow_html=True,
                 )
 
+        st.markdown("<div style='height: 0.85rem;'></div>", unsafe_allow_html=True)
         if render_logout_confirmation("Logout", "admin_logout_confirm", "admin"):
             st.session_state.user = None
             st.session_state.auth_mode = "signin"
