@@ -55,6 +55,7 @@ DEFAULT_SYNC_SERVER_URL = os.environ.get("PIGILAN_SYNC_SERVER_URL", "http://127.
 MAX_PIG_COUNT = 100000
 DEFAULT_ADMIN_USERNAME = "admin"
 DEFAULT_ADMIN_PASSWORD = "admin123"
+REVERSE_GEOCODE_URL = "https://nominatim.openstreetmap.org/reverse"
 
 SYMPTOM_WEIGHTS = {
     "High Fever": 3,
@@ -143,6 +144,14 @@ def _clean_address_value(address):
     return cleaned
 
 
+def _build_address_lookup_key(address):
+    cleaned = _clean_address_value(address)
+    if not cleaned:
+        return None
+    normalized = "".join(char.lower() if char.isalnum() else " " for char in cleaned)
+    return " ".join(normalized.split())
+
+
 def _format_address_record(record, fallback="No address saved."):
     explicit_address = _clean_address_value(record.get("address"))
     if explicit_address:
@@ -155,6 +164,93 @@ def _format_address_record(record, fallback="No address saved."):
     ]
     parts = [part for part in parts if part and part.lower() != "not set yet"]
     return ", ".join(parts) if parts else fallback
+
+
+def get_coordinates_for_address(address, exclude_user_id=None):
+    address_key = _build_address_lookup_key(address)
+    if not address_key:
+        return None, None
+
+    matching_users = []
+    for user in get_users():
+        if exclude_user_id is not None and user.get("id") == exclude_user_id:
+            continue
+        if _build_address_lookup_key(user.get("address")) != address_key:
+            continue
+        matching_users.append(user)
+        user_latitude, user_longitude = _normalize_coordinates(
+            user.get("latitude"),
+            user.get("longitude"),
+        )
+        if user_latitude is not None and user_longitude is not None:
+            return user_latitude, user_longitude
+
+    for user in matching_users:
+        for case in get_cases_for_user(user["id"]):
+            case_latitude, case_longitude = _normalize_coordinates(
+                case.get("latitude"),
+                case.get("longitude"),
+            )
+            if case_latitude is not None and case_longitude is not None:
+                return case_latitude, case_longitude
+
+    return None, None
+
+
+def reverse_geocode_coordinates(latitude, longitude):
+    latitude, longitude = _normalize_coordinates(latitude, longitude)
+    if latitude is None or longitude is None:
+        return None
+
+    try:
+        response = requests.get(
+            REVERSE_GEOCODE_URL,
+            params={
+                "format": "jsonv2",
+                "lat": latitude,
+                "lon": longitude,
+                "zoom": 18,
+                "addressdetails": 1,
+            },
+            headers={
+                "User-Agent": "Pigilan/1.0 (farm address reverse geocoder)",
+            },
+            timeout=4,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except Exception:
+        return None
+
+    address_payload = payload.get("address") or {}
+    ordered_parts = [
+        address_payload.get("house_number"),
+        address_payload.get("road"),
+        address_payload.get("neighbourhood"),
+        address_payload.get("suburb"),
+        address_payload.get("village"),
+        address_payload.get("hamlet"),
+        address_payload.get("town"),
+        address_payload.get("city"),
+        address_payload.get("municipality"),
+        address_payload.get("county"),
+        address_payload.get("state"),
+    ]
+    address_parts = []
+    seen_parts = set()
+    for part in ordered_parts:
+        cleaned_part = str(part or "").strip()
+        normalized_part = cleaned_part.lower()
+        if not cleaned_part or normalized_part in seen_parts:
+            continue
+        seen_parts.add(normalized_part)
+        address_parts.append(cleaned_part)
+
+    if address_parts:
+        return ", ".join(address_parts)
+
+    display_name = str(payload.get("display_name") or "").strip()
+    return display_name or None
 
 
 def _hash_password(password, salt=None):
@@ -204,7 +300,10 @@ def register_user(
     latitude=None,
     longitude=None,
 ):
+    cleaned_address = _clean_address_value(address)
     latitude, longitude = _normalize_coordinates(latitude, longitude)
+    if latitude is None or longitude is None:
+        latitude, longitude = get_coordinates_for_address(cleaned_address)
     hashed_password = _hash_password(password)
     user_id = create_user(
         username=username,
@@ -214,7 +313,7 @@ def register_user(
         barangay=barangay,
         municipality=municipality,
         province=province,
-        address=_clean_address_value(address),
+        address=cleaned_address,
         role="farmer",
         client_record_id=str(uuid.uuid4()),
         sync_status="pending",
@@ -276,7 +375,13 @@ def edit_user_profile(
     latitude=None,
     longitude=None,
 ):
+    cleaned_address = _clean_address_value(address)
     latitude, longitude = _normalize_coordinates(latitude, longitude)
+    if latitude is None or longitude is None:
+        latitude, longitude = get_coordinates_for_address(
+            cleaned_address,
+            exclude_user_id=user_id,
+        )
     update_user_profile(
         user_id=user_id,
         first_name=first_name,
@@ -284,7 +389,7 @@ def edit_user_profile(
         barangay=barangay,
         municipality=municipality,
         province=province,
-        address=_clean_address_value(address),
+        address=cleaned_address,
         latitude=latitude,
         longitude=longitude,
     )

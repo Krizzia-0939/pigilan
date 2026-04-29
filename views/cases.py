@@ -4,6 +4,13 @@ from html import escape
 import streamlit as st
 
 try:
+    import folium
+    from streamlit_folium import st_folium
+except Exception:  # pragma: no cover - fallback if folium is unavailable locally
+    folium = None
+    st_folium = None
+
+try:
     import pandas as pd
 except Exception:  # pragma: no cover - fallback if pandas is unavailable locally
     pd = None
@@ -12,6 +19,7 @@ from core.backend import (
     build_case_report_pdf,
     distance_km,
     edit_case,
+    get_coordinates_for_address,
     list_case_markers,
     list_cases_for_user,
     list_notifications,
@@ -19,6 +27,7 @@ from core.backend import (
     mark_notification_as_read,
     save_case_report_export,
 )
+from shared.location_picker import DEFAULT_LATITUDE, DEFAULT_LONGITUDE
 
 
 def inject_reports_styles():
@@ -64,6 +73,7 @@ def inject_reports_styles():
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 0.85rem;
+            margin-bottom: 1rem;
         }
 
         .reports-nearby-summary-card {
@@ -118,6 +128,12 @@ def inject_reports_styles():
         .reports-nearby-list {
             display: grid;
             gap: 0.75rem;
+        }
+
+        .reports-nearby-list--scroll {
+            max-height: 42rem;
+            overflow-y: auto;
+            padding-right: 0.25rem;
         }
 
         .reports-nearby-item {
@@ -251,13 +267,20 @@ def get_reference_location(user, user_cases):
     if user_lat is not None and user_lon is not None:
         return user_lat, user_lon, "saved farm location"
 
+    address_lat, address_lon = get_coordinates_for_address(
+        user.get("address"),
+        exclude_user_id=user.get("id"),
+    )
+    if address_lat is not None and address_lon is not None:
+        return address_lat, address_lon, "matching farm address"
+
     for case in user_cases:
         case_lat = safe_float(case.get("latitude"))
         case_lon = safe_float(case.get("longitude"))
         if case_lat is not None and case_lon is not None:
             return case_lat, case_lon, "latest saved report location"
 
-    return None, None, None
+    return DEFAULT_LATITUDE, DEFAULT_LONGITUDE, "default farm area reference"
 
 
 def collect_nearby_cases(user, user_cases):
@@ -301,10 +324,68 @@ def build_nearby_case_map_points(reference_lat, reference_lon, nearby_cases):
     return map_points
 
 
+def get_nearby_case_map_colors(risk_level):
+    normalized = str(risk_level or "LOW RISK").strip().upper()
+    if normalized == "HIGH RISK":
+        return "#b84a41", "#d9655b"
+    if normalized == "MODERATE RISK":
+        return "#b47b26", "#d8a24b"
+    return "#5b7b57", "#79c67b"
+
+
 def render_nearby_cases_map(reference_lat, reference_lon, nearby_cases):
+    if folium is not None and st_folium is not None:
+        nearby_map = folium.Map(
+            location=[reference_lat, reference_lon],
+            zoom_start=11,
+            control_scale=True,
+        )
+        folium.Circle(
+            location=[reference_lat, reference_lon],
+            radius=10000,
+            color="#4d8fc4",
+            weight=2,
+            fill=True,
+            fill_color="#7fcf92",
+            fill_opacity=0.14,
+            tooltip="10 km coverage around your farm reference point",
+        ).add_to(nearby_map)
+        folium.Marker(
+            [reference_lat, reference_lon],
+            tooltip="Your farm reference point",
+            icon=folium.Icon(color="blue", icon="home"),
+        ).add_to(nearby_map)
+
+        for case in nearby_cases:
+            case_lat = safe_float(case.get("latitude"))
+            case_lon = safe_float(case.get("longitude"))
+            if case_lat is None or case_lon is None:
+                continue
+            marker_color, marker_fill_color = get_nearby_case_map_colors(case.get("risk_level"))
+            folium.CircleMarker(
+                location=[case_lat, case_lon],
+                radius=7,
+                color=marker_color,
+                weight=2,
+                fill=True,
+                fill_color=marker_fill_color,
+                fill_opacity=0.9,
+                tooltip=f"Case #{case.get('id')} - {case.get('distance_km', 0)} km away",
+            ).add_to(nearby_map)
+
+        st_folium(
+            nearby_map,
+            height=360,
+            width=None,
+            key="reports_nearby_cases_map",
+            returned_objects=[],
+            use_container_width=True,
+        )
+        return
+
     if pd is None:
         st.markdown(
-            "<div class='reports-nearby-empty'>Map preview is unavailable because the local pandas package is missing.</div>",
+            "<div class='reports-nearby-empty'>Map preview is unavailable because the local map components are missing.</div>",
             unsafe_allow_html=True,
         )
         return
@@ -386,7 +467,7 @@ def build_nearby_case_cards_markup(nearby_cases):
         )
 
     items = []
-    for case in nearby_cases[:5]:
+    for case in nearby_cases:
         risk_level = str(case.get("risk_level") or "LOW RISK").strip().upper()
         reporter_name = get_reporter_name(case)
         distance_label = f"{case['distance_km']:.1f} km away"
@@ -495,9 +576,10 @@ with st.container(border=True):
 
         with list_col:
             with st.container(border=True):
+                nearby_list_class = "reports-nearby-list reports-nearby-list--scroll" if len(nearby_cases) > 10 else "reports-nearby-list"
                 st.markdown("<p class='reports-nearby-panel-title'>Recent Nearby Reports</p>", unsafe_allow_html=True)
                 st.markdown(
-                    f"<div class='reports-nearby-list'>{build_nearby_case_cards_markup(nearby_cases)}</div>",
+                    f"<div class='{nearby_list_class}'>{build_nearby_case_cards_markup(nearby_cases)}</div>",
                     unsafe_allow_html=True,
                 )
 

@@ -6,16 +6,19 @@ import streamlit as st
 from core.backend import (
     BIOSECURITY_ITEMS,
     edit_user_profile,
+    get_coordinates_for_address,
     get_admin_dashboard_data,
     get_database_backup,
     get_latest_biosecurity_state,
     get_sync_status_summary,
     login_user,
     register_user,
+    reverse_geocode_coordinates,
     save_biosecurity_check,
     sync_with_server,
 )
 from shared.navigation import consume_post_auth_redirect, scroll_to_target_if_needed
+from shared.location_picker import DEFAULT_LATITUDE, DEFAULT_LONGITUDE, render_point_location_picker
 
 
 if "user" not in st.session_state:
@@ -35,8 +38,9 @@ def inject_auth_styles():
         .auth-hero {
             position: relative;
             max-width: 760px;
-            margin: 0 auto 1.15rem;
+            margin: 0 0 1.15rem;
             padding: 0.5rem 0 1.25rem;
+            text-align: left;
         }
 
         .auth-hero::after {
@@ -353,7 +357,7 @@ def inject_profile_styles():
         <style>
         .profile-shell {
             max-width: 860px;
-            margin: 0 auto;
+            margin: 0;
         }
 
         .profile-title {
@@ -362,6 +366,7 @@ def inject_profile_styles():
             font-size: clamp(1.95rem, 4vw, 2.7rem);
             line-height: 1.05;
             letter-spacing: -0.03em;
+            text-align: left;
         }
 
         .profile-card {
@@ -432,6 +437,29 @@ def inject_profile_styles():
         .profile-bar span,
         .profile-bar div {
             color: inherit;
+        }
+
+        .st-key-account_sync_button_header {
+            margin: -0.1rem -0.1rem 0.9rem;
+        }
+
+        .st-key-account_sync_button_header button {
+            min-height: 0;
+            padding: 0.62rem 0.95rem;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #6d7359, #5a6047);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            box-shadow: none;
+        }
+
+        .st-key-account_sync_button_header button:hover {
+            background: linear-gradient(180deg, #5b634b, #50573f);
+            color: #fff;
+            transform: none;
+            box-shadow: none;
         }
 
         .profile-overview-row {
@@ -629,6 +657,47 @@ def format_address(user):
     ]
     parts = [part for part in parts if part and part.lower() != "not set yet"]
     return ", ".join(parts) if parts else "Not set yet"
+
+
+def resolve_profile_location_seed(user):
+    try:
+        user_latitude = float(user.get("latitude"))
+        user_longitude = float(user.get("longitude"))
+    except (TypeError, ValueError):
+        user_latitude = None
+        user_longitude = None
+
+    if user_latitude is not None and user_longitude is not None:
+        return user_latitude, user_longitude
+
+    matched_latitude, matched_longitude = get_coordinates_for_address(
+        user.get("address"),
+        exclude_user_id=user.get("id"),
+    )
+    if matched_latitude is not None and matched_longitude is not None:
+        return matched_latitude, matched_longitude
+
+    return DEFAULT_LATITUDE, DEFAULT_LONGITUDE
+
+
+def resolve_picker_address(session_prefix, latitude, longitude):
+    latitude = round(float(latitude), 6)
+    longitude = round(float(longitude), 6)
+    signature = f"{latitude:.6f},{longitude:.6f}"
+    signature_key = f"{session_prefix}_resolved_address_signature"
+    value_key = f"{session_prefix}_resolved_address_value"
+    status_key = f"{session_prefix}_resolved_address_status"
+
+    if st.session_state.get(signature_key) != signature:
+        resolved_address = reverse_geocode_coordinates(latitude, longitude)
+        st.session_state[signature_key] = signature
+        st.session_state[value_key] = resolved_address or f"{latitude:.6f}, {longitude:.6f}"
+        st.session_state[status_key] = "resolved" if resolved_address else "coordinates"
+
+    return (
+        str(st.session_state.get(value_key) or "").strip(),
+        str(st.session_state.get(status_key) or "coordinates").strip(),
+    )
 
 
 def get_profile_initials(user):
@@ -1278,7 +1347,6 @@ if st.session_state.user:
         with header_col:
             st.markdown("<div class='profile-bar'>Biosecurity Checklist</div>", unsafe_allow_html=True)
         with sync_col:
-            st.write("")
             if st.button("Sync", key="account_sync_button_header", use_container_width=True):
                 try:
                     sync_result = sync_with_server(user_id=user["id"])
@@ -1370,26 +1438,68 @@ if st.session_state.user:
             )
             edit_first_name = st.text_input("First Name", value=user["first_name"])
             edit_last_name = st.text_input("Last Name", value=user["last_name"])
-            edit_address = st.text_input("Address", value=user.get("address") or "")
-            st.caption("Address is shown in your account profile.")
-            edit_barangay = st.text_input("Barangay (optional)", value=user["barangay"])
-            edit_municipality = st.text_input("Municipality (optional)", value=user["municipality"])
-            edit_province = st.text_input("Province (optional)", value=user["province"])
+            address_slot = st.empty()
+            if st.session_state.get("edit_profile_location_owner_id") != user["id"]:
+                edit_latitude_seed, edit_longitude_seed = resolve_profile_location_seed(user)
+                st.session_state["edit_profile_location_owner_id"] = user["id"]
+                st.session_state["edit_profile_farm_latitude"] = round(float(edit_latitude_seed), 6)
+                st.session_state["edit_profile_farm_longitude"] = round(float(edit_longitude_seed), 6)
+                st.session_state["edit_profile_farm_latitude_input"] = round(float(edit_latitude_seed), 6)
+                st.session_state["edit_profile_farm_longitude_input"] = round(float(edit_longitude_seed), 6)
+                st.session_state["edit_profile_farm_gps_requested"] = False
+                st.session_state["edit_profile_farm_gps_accuracy"] = None
+                st.session_state["edit_profile_farm_pending_map_point"] = None
+                st.session_state["edit_profile_farm_processed_map_click"] = None
+                st.session_state["edit_profile_address_input"] = user.get("address") or ""
+                st.session_state["edit_profile_address_last_sync_signature"] = (
+                    f"{float(edit_latitude_seed):.6f},{float(edit_longitude_seed):.6f}"
+                )
+
+            st.caption("Set the exact farm point used by map view and nearby case distance.")
+            edit_latitude, edit_longitude = render_point_location_picker(
+                title="Farm Location",
+                session_prefix="edit_profile_farm",
+                initial_latitude=st.session_state["edit_profile_farm_latitude"],
+                initial_longitude=st.session_state["edit_profile_farm_longitude"],
+                caption_text="Use your current location, click the map, or type the exact farm coordinates.",
+                show_section_header=False,
+            )
+            edit_resolved_address, _ = resolve_picker_address(
+                "edit_profile_farm",
+                edit_latitude,
+                edit_longitude,
+            )
+            edit_address_signature = str(
+                st.session_state.get("edit_profile_farm_resolved_address_signature") or ""
+            ).strip()
+            if st.session_state.get("edit_profile_address_last_sync_signature") != edit_address_signature:
+                st.session_state["edit_profile_address_input"] = edit_resolved_address
+                st.session_state["edit_profile_address_last_sync_signature"] = edit_address_signature
+
+            with address_slot.container():
+                edit_address = st.text_input("Address", key="edit_profile_address_input")
+                st.caption("Address is shown in your account profile and updates from the farm location picker.")
 
             if st.button("Save My Changes", key="save_profile_changes", use_container_width=True):
                 updated_user = edit_user_profile(
                     user_id=user["id"],
                     first_name=edit_first_name.strip(),
                     last_name=edit_last_name.strip(),
-                    barangay=edit_barangay.strip(),
-                    municipality=edit_municipality.strip(),
-                    province=edit_province.strip(),
+                    barangay=str(user.get("barangay") or "").strip(),
+                    municipality=str(user.get("municipality") or "").strip(),
+                    province=str(user.get("province") or "").strip(),
                     address=edit_address.strip(),
-                    latitude=user.get("latitude"),
-                    longitude=user.get("longitude"),
+                    latitude=edit_latitude,
+                    longitude=edit_longitude,
                 )
                 st.session_state.user = updated_user
                 st.session_state.show_edit_profile = False
+                st.session_state.pop("edit_profile_location_owner_id", None)
+                st.session_state.pop("edit_profile_address_input", None)
+                st.session_state.pop("edit_profile_address_last_sync_signature", None)
+                for key in list(st.session_state.keys()):
+                    if key.startswith("edit_profile_farm_"):
+                        st.session_state.pop(key, None)
                 st.success("Your details were updated successfully.")
                 st.rerun()
 
@@ -1424,21 +1534,42 @@ else:
                 unsafe_allow_html=True,
             )
 
-            with st.form("signup_form"):
-                full_name = render_auth_input("&#128100;", "Full Name", "Full Name *", "signup_full_name")
-                username = render_auth_input("&#128100;", "Username", "Username *", "signup_username")
-                email_address = render_auth_input("&#9993;", "Email Address", "Email Address *", "signup_email")
-                address = render_auth_input("&#127968;", "Address", "Farm Address *", "signup_address")
-                password = render_auth_input("&#128274;", "Password", "Password *", "signup_password", field_type="password")
-                confirm_password = render_auth_input(
-                    "&#128274;",
-                    "Confirm Password",
-                    "Confirm Password *",
-                    "signup_confirm_password",
-                    field_type="password",
-                )
-                st.caption("This address will appear in My Account. You can add the farm map point later.")
-                submitted = st.form_submit_button("Sign Up", use_container_width=True)
+            full_name = render_auth_input("&#128100;", "Full Name", "Full Name *", "signup_full_name")
+            username = render_auth_input("&#128100;", "Username", "Username *", "signup_username")
+            email_address = render_auth_input("&#9993;", "Email Address", "Email Address *", "signup_email")
+            password = render_auth_input("&#128274;", "Password", "Password *", "signup_password", field_type="password")
+            confirm_password = render_auth_input(
+                "&#128274;",
+                "Confirm Password",
+                "Confirm Password *",
+                "signup_confirm_password",
+                field_type="password",
+            )
+
+            st.markdown("<p class='auth-section-title'>Farm Address</p>", unsafe_allow_html=True)
+            st.markdown(
+                "<p class='auth-section-copy'>Pick your farm on the map. Pigilan will automatically detect and save the farm address shown in My Account.</p>",
+                unsafe_allow_html=True,
+            )
+            signup_latitude, signup_longitude = render_point_location_picker(
+                title="Farm Address",
+                session_prefix="signup_farm",
+                initial_latitude=DEFAULT_LATITUDE,
+                initial_longitude=DEFAULT_LONGITUDE,
+                caption_text="Use your current location, click the map, or type the exact farm coordinates.",
+                show_section_header=False,
+            )
+            signup_resolved_address, signup_address_status = resolve_picker_address(
+                "signup_farm",
+                signup_latitude,
+                signup_longitude,
+            )
+            if signup_address_status == "resolved":
+                st.caption(f"Detected farm address: {signup_resolved_address}")
+            else:
+                st.caption(f"Detected farm address is unavailable right now. The selected coordinates will be saved as: {signup_resolved_address}")
+
+            submitted = st.button("Sign Up", key="signup_submit_button", use_container_width=True)
 
             st.markdown(
                 "<p class='auth-switch-copy'>Already have an account?</p>",
@@ -1457,7 +1588,6 @@ else:
                         str(full_name).strip(),
                         str(username).strip(),
                         str(email_address).strip(),
-                        str(address).strip(),
                         str(password).strip(),
                         str(confirm_password).strip(),
                     ]
@@ -1471,6 +1601,18 @@ else:
                     st.error("Password and Confirm Password do not match.")
                 elif len(password) < 6:
                     st.error("Please use a password with at least 6 characters.")
+                elif (
+                    st.session_state.get("signup_farm_gps_accuracy") is None
+                    and st.session_state.get("signup_farm_processed_map_click") is None
+                    and (
+                        round(float(signup_latitude), 6),
+                        round(float(signup_longitude), 6),
+                    ) == (
+                        round(float(DEFAULT_LATITUDE), 6),
+                        round(float(DEFAULT_LONGITUDE), 6),
+                    )
+                ):
+                    st.error("Please set the exact farm location using GPS, the map, or manual coordinates before signing up.")
                 else:
                     try:
                         register_user(
@@ -1481,9 +1623,17 @@ else:
                             barangay="Not set yet",
                             municipality="Not set yet",
                             province="Not set yet",
-                            address=address.strip(),
+                            address=signup_resolved_address,
+                            latitude=signup_latitude,
+                            longitude=signup_longitude,
                         )
                         st.session_state.auth_notice = "Account created successfully. You can now sign in."
+                        for key in list(st.session_state.keys()):
+                            if key.startswith("signup_farm_"):
+                                st.session_state.pop(key, None)
+                        st.session_state.pop("signup_farm_resolved_address_signature", None)
+                        st.session_state.pop("signup_farm_resolved_address_value", None)
+                        st.session_state.pop("signup_farm_resolved_address_status", None)
                         set_auth_mode("signin")
                         st.rerun()
                     except Exception:
