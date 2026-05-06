@@ -19,7 +19,7 @@ As a result, infected animals are isolated late, allowing the disease to spread 
 - Promote timely preventive and containment actions to reduce the spread of ASF.
 - Strengthen farm biosecurity practices through guided protocols and monitoring tools.
 - Generate alerts from nearby possible cases of ASF.
-- Use machine learning-based image recognition to analyze photos of pigs and identify possible visual symptoms related to ASF.
+- Integrate machine-learning-based image classification into the PWA to analyze uploaded pig photos and support ASF risk assessment alongside reported symptoms.
 
 ## Features
 
