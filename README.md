@@ -1,5 +1,14 @@
 # Pigilan  : Early Detection for Hog Farmers
 
+Meet the developer
+<img width="2048" height="1365" alt="team-members" src="https://github.com/user-attachments/assets/f2cbb06e-ca01-4813-9dd5-c93ed5091de9" />
+
+Members:
+Espartero, Joshua Daniel
+Santacera, Krizzia Nicole
+Turija, Ryssa Aryana
+
+
 <img width="1536" height="1024" alt="BG-PHOTO" src="https://github.com/user-attachments/assets/7ecf0cca-0dff-48b7-b89d-3d19d0ec267b" />
 
 Pigilan is a Progressive Web App designed to help farmers detect possible signs of ASF early. Users can select observed symptoms and also use image analysis to assess the condition of their pigs. 
