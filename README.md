@@ -4,8 +4,8 @@ Meet the developer
 <img width="2048" height="1365" alt="team-members" src="https://github.com/user-attachments/assets/f2cbb06e-ca01-4813-9dd5-c93ed5091de9" />
 
 Members:
-Espartero, Joshua Daniel
-Santacera, Krizzia Nicole
+Espartero, Joshua Daniel <br>
+Santacera, Krizzia Nicole<br>
 Turija, Ryssa Aryana
 
 
