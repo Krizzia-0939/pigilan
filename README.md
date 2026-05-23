@@ -1,79 +1,379 @@
-# Pigilan: A Progressive Web App for Early Detection and Warning of African Swine Fever
+# Pigilan  : Early Detection for Hog Farmers
 
-## Introduction
+<img width="1536" height="1024" alt="BG-PHOTO" src="https://github.com/user-attachments/assets/7ecf0cca-0dff-48b7-b89d-3d19d0ec267b" />
 
-African Swine Fever (ASF) is a highly contagious disease that causes severe losses in the swine industry. Early detection is important to prevent the rapid spread of the virus, especially among small-scale pig farmers who may lack access to immediate veterinary assistance. However, many farmers find it difficult to identify early symptoms of ASF and determine the proper actions to take.
+Pigilan is a Progressive Web App designed to help farmers detect possible signs of ASF early. Users can select observed symptoms and also use image analysis to assess the condition of their pigs. 
 
-PIGilan is a web-based system designed to assist farmers in identifying possible signs of ASF through symptom selection and image analysis. The system provides risk assessments and guidance on isolation, first aid, and when to consult veterinary authorities. By integrating technology into livestock management, the application aims to promote early detection, improve biosecurity practices, and help reduce the spread of ASF.
 
-## Problem Statement
+It helps users:
 
-African Swine Fever (ASF) is a highly contagious viral disease that affects pigs and causes severe economic losses to farmers and the livestock industry. Since there is no cure or vaccine for this disease, early detection and immediate containment are essential to prevent outbreaks and minimize damage. Unfortunately, many small-scale and backyard pig farmers lack sufficient knowledge about the early symptoms of ASF. They often struggle to differentiate ASF from other common swine diseases and may delay reporting due to uncertainty or limited access to veterinary services.
+- create local farmer accounts
+- check pigs for possible ASF risk
+- upload a pig image for ML-based detection
+- save cases locally
+- view nearby case alerts
+- track farm biosecurity
+- export or sync records later when internet is available
 
-As a result, infected animals are isolated late, allowing the disease to spread rapidly within farms and nearby areas. This can lead to large-scale culling, serious financial losses, and threats to food security and the local economy. Therefore, there is a need for a digital, accessible, and farmer-friendly system that can assist in early detection, risk assessment, structured reporting, and biosecurity guidance to help reduce the spread of African Swine Fever.
-
-## General Objectives
-
-- Develop a system that assists pig farmers in identifying early warning signs of African Swine Fever (ASF).
-- Generate a reliable risk assessment system based on reported symptoms and health data.
-- Promote timely preventive and containment actions to reduce the spread of ASF.
-- Strengthen farm biosecurity practices through guided protocols and monitoring tools.
-- Generate alerts from nearby possible cases of ASF.
-- Use machine learning-based image recognition to analyze photos of pigs and identify possible visual symptoms related to ASF.
-
-## Features
-
-- ASF risk assessment
-- Early warning alerts
-- Biosecurity checklist
-- Case report sharing
-- Offline access
-- ASF image detection
-
-## Project Checklist
-
-- [x] ASF risk assessment
-- [x] Early warning alerts
-- [x] Biosecurity checklist
-- [x] Case report sharing
-- [x] Offline access
-- [x] ASF image detection
-- [x] Streamlit frontend
-- [x] Python backend
-- [x] SQLite database
-- [x] Teachable Machine integration
-
-## Tech Stack
+This project is currently built for a local-first workflow using:
 
 - Frontend: Streamlit
 - Backend: Python
 - Database: SQLite
-- Machine Learning: Teachable Machine
-- Deployment: Streamlit Cloud or local server
+- ML Model: Teachable Machine export (`keras_model.h5`)
+- Sync Server: FastAPI
 
-## How To Run
+## Current App Flow
 
-Install the required dependencies:
+For farmers:
+
+- `Home`
+- `Check Pig`
+- `Cases`
+- `Account`
+
+For admin:
+
+- `Dashboard`
+
+Main working features right now:
+
+- local sign up and sign in
+- ASF risk assessment from symptoms
+- image-based ASF detection
+- nearby case alerts
+- saved case history
+- PDF case export
+- biosecurity checklist
+- local-first saving in SQLite
+- basic push sync with a sync server
+
+## Important Notes
+
+- The app is offline-first for the core farmer workflow, but it still runs through Streamlit.
+- On local development, the Streamlit server must be running for the app to open.
+- The map background uses online tiles, so map tiles may be blank without internet.
+- GPS and manual coordinates can still be used even if map tiles do not load.
+- The PWA support is basic/best-effort because this is still a Streamlit app.
+
+## Folder Guide
+
+Main files your teammates should know:
+
+- [`app.py`](/c:/Users/jacer/Downloads/pigilan/app.py)
+  Main Streamlit entry file. Handles top navigation and loads the page views.
+
+- [`backend.py`](/c:/Users/jacer/Downloads/pigilan/backend.py)
+  Main application logic. Includes:
+  local account handling, case saving, risk assessment, alerts, PDF export, and push sync.
+
+- [`database.py`](/c:/Users/jacer/Downloads/pigilan/database.py)
+  SQLite schema and database functions.
+
+- [`ml_model.py`](/c:/Users/jacer/Downloads/pigilan/ml_model.py)
+  Loads the Teachable Machine model and runs image prediction.
+
+- [`location_picker.py`](/c:/Users/jacer/Downloads/pigilan/location_picker.py)
+  GPS, map click, and manual coordinate entry logic.
+
+- [`pdf_utils.py`](/c:/Users/jacer/Downloads/pigilan/pdf_utils.py)
+  PDF report generation helpers.
+
+- [`sync_server.py`](/c:/Users/jacer/Downloads/pigilan/sync_server.py)
+  FastAPI server for receiving sync pushes.
+
+- [`requirements.txt`](/c:/Users/jacer/Downloads/pigilan/requirements.txt)
+  Python dependencies.
+
+- [`pigilan.db`](/c:/Users/jacer/Downloads/pigilan/pigilan.db)
+  Local SQLite database file.
+
+- [`keras_model.h5`](/c:/Users/jacer/Downloads/pigilan/keras_model.h5)
+  ML model file.
+
+- [`labels.txt`](/c:/Users/jacer/Downloads/pigilan/labels.txt)
+  Class labels for the model.
+
+- [`views/`](/c:/Users/jacer/Downloads/pigilan/views)
+  Streamlit page files:
+  `home.py`, `about.py`, `asf_detection.py`, `cases.py`, `account.py`, `biosecurity.py`
+
+- [`static/`](/c:/Users/jacer/Downloads/pigilan/static)
+  PWA-related files like manifest, icon, and service worker.
+
+- [`.streamlit/config.toml`](/c:/Users/jacer/Downloads/pigilan/.streamlit/config.toml)
+  Enables static serving for PWA assets.
+
+## Setup Requirements
+
+Recommended Python version:
+
+- Python `3.11`
+
+Do not use Python `3.14` for this project because some dependencies like TensorFlow/Streamlit-related packages may fail.
+
+## First-Time Setup
+
+Open PowerShell in the project folder:
 
 ```powershell
+cd "C:\Users\jacer\Downloads\pigilan"
+```
+
+Create the virtual environment:
+
+```powershell
+py -3.11 -m venv .venv
+```
+
+Activate it:
+
+```powershell
+.\.venv\Scripts\activate
+```
+
+Install dependencies:
+
+```powershell
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Run the Streamlit app:
+## How To Run The Main App
+
+If the virtual environment is already set up:
 
 ```powershell
-streamlit run app.py
+.\.venv\Scripts\python.exe -m streamlit run .\app.py
 ```
 
-The app usually opens at:
+Usually the app opens at:
 
 ```text
 http://localhost:8501
 ```
 
-## Default Admin Account
+## How To Run The Sync Server
+
+The sync server is only needed if you want `Sync` to work.
+
+Open a second PowerShell terminal in the same project folder and run:
+
+```powershell
+python sync_server.py
+```
+
+Health check:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Expected result:
+
+```json
+{"status":"ok"}
+```
+
+## Local Development Workflow
+
+Use two terminals:
+
+Terminal 1:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run .\app.py
+```
+
+Terminal 2:
+
+```powershell
+python sync_server.py
+```
+
+## Farmer Workflow
+
+1. Open `Account`
+2. Sign up or sign in
+3. Go to `Check Pig`
+4. Enter symptoms, location, and image
+5. Save the pig check
+6. Go to `Cases` to review alerts and saved records
+7. Go to `Account` for:
+   sync, biosecurity checklist, backup, and profile editing
+
+## Sync Workflow
+
+### Push Sync
+
+Farmer side:
+
+1. Make sure the sync server is running
+2. Open `Account`
+3. Click `Sync`
+
+Current default local sync URL:
+
+```text
+http://127.0.0.1:8000
+```
+
+## Admin Account
+
+Default admin credentials:
 
 - Username: `admin`
 - Password: `admin123`
 
-Change the default admin account before real deployment.
+Change this before real deployment.
+
+## Offline Behavior
+
+What works offline on the same device:
+
+- local sign up/sign in
+- ASF detection
+- risk assessment
+- local case saving
+- local biosecurity saving
+
+What is limited offline:
+
+- online map tiles
+- push sync
+- opening the app if the local Streamlit server is not running
+
+## PWA Notes
+
+This project includes:
+
+- `manifest.json`
+- `service-worker.js`
+- app icon
+- manifest/service worker injection
+
+That means the app can be treated as a basic Streamlit-based PWA for demo/school use.
+
+Important:
+
+- it is still fundamentally a Streamlit web app
+- if running locally, the local Streamlit server must still be running
+- installable browser behavior is supported, but this is not a full native standalone app
+
+## Deployment Notes
+
+For a simple deployed setup:
+
+1. deploy the Streamlit app
+2. deploy the FastAPI sync server
+3. set one fixed sync server URL
+4. keep local-first save behavior for farmers
+
+Once deployed, sync becomes easier because:
+
+- the sync server can stay online 24/7
+- users do not need to run local `uvicorn`
+- users do not need `localhost` for sync
+
+## Teammate Handoff Notes
+
+If your teammates are working on frontend/design, they should mainly look at:
+
+- [`app.py`](/c:/Users/jacer/Downloads/pigilan/app.py)
+- [`views/home.py`](/c:/Users/jacer/Downloads/pigilan/views/home.py)
+- [`views/asf_detection.py`](/c:/Users/jacer/Downloads/pigilan/views/asf_detection.py)
+- [`views/cases.py`](/c:/Users/jacer/Downloads/pigilan/views/cases.py)
+- [`views/account.py`](/c:/Users/jacer/Downloads/pigilan/views/account.py)
+
+If they are changing backend/database behavior, they should review:
+
+- [`backend.py`](/c:/Users/jacer/Downloads/pigilan/backend.py)
+- [`database.py`](/c:/Users/jacer/Downloads/pigilan/database.py)
+- [`sync_server.py`](/c:/Users/jacer/Downloads/pigilan/sync_server.py)
+
+## Common Problems
+
+### 1. `ModuleNotFoundError`
+
+Usually means dependencies are not installed in the current venv.
+
+Fix:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+### 2. `localhost refused to connect`
+
+Usually means Streamlit is not running.
+
+Fix:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run .\app.py
+```
+
+### 3. Sync says connection refused
+
+Usually means the sync server is not running.
+
+Fix:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn sync_server:app --host 127.0.0.1 --port 8000
+```
+
+### 4. Map tiles are blank
+
+This is expected when internet is weak or unavailable. Use:
+
+- GPS button
+- map click if visible
+- manual latitude/longitude
+
+### 5. Python version problems
+
+Use Python `3.11` and recreate `.venv` if needed.
+
+## Files That Can Usually Be Ignored In Handoff
+
+- `.venv/`
+- `__pycache__/`
+
+## Suggested Team Handoff Package
+
+Share the whole project except `.venv` if you want a lighter handoff:
+
+- `app.py`
+- `backend.py`
+- `database.py`
+- `location_picker.py`
+- `ml_model.py`
+- `pdf_utils.py`
+- `sync_server.py`
+- `requirements.txt`
+- `README.md`
+- `labels.txt`
+- `keras_model.h5`
+- `pigilan.db`
+- `views/`
+- `static/`
+- `.streamlit/`
+
+## Quick Start For Teammates
+
+If your teammate just wants to run it fast:
+
+```powershell
+cd "C:\Users\jacer\Downloads\pigilan"
+py -3.11 -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+python -m streamlit run app.py
+```
+
+If they also want sync:
+
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn sync_server:app --host 127.0.0.1 --port 8000
+```
