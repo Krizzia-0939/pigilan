@@ -66,53 +66,6 @@ Main working features right now:
 - GPS and manual coordinates can still be used even if map tiles do not load.
 - The PWA support is basic/best-effort because this is still a Streamlit app.
 
-## Folder Guide
-
-Main files your teammates should know:
-
-- [`app.py`](/c:/Users/jacer/Downloads/pigilan/app.py)
-  Main Streamlit entry file. Handles top navigation and loads the page views.
-
-- [`backend.py`](/c:/Users/jacer/Downloads/pigilan/backend.py)
-  Main application logic. Includes:
-  local account handling, case saving, risk assessment, alerts, PDF export, and push sync.
-
-- [`database.py`](/c:/Users/jacer/Downloads/pigilan/database.py)
-  SQLite schema and database functions.
-
-- [`ml_model.py`](/c:/Users/jacer/Downloads/pigilan/ml_model.py)
-  Loads the Teachable Machine model and runs image prediction.
-
-- [`location_picker.py`](/c:/Users/jacer/Downloads/pigilan/location_picker.py)
-  GPS, map click, and manual coordinate entry logic.
-
-- [`pdf_utils.py`](/c:/Users/jacer/Downloads/pigilan/pdf_utils.py)
-  PDF report generation helpers.
-
-- [`sync_server.py`](/c:/Users/jacer/Downloads/pigilan/sync_server.py)
-  FastAPI server for receiving sync pushes.
-
-- [`requirements.txt`](/c:/Users/jacer/Downloads/pigilan/requirements.txt)
-  Python dependencies.
-
-- [`pigilan.db`](/c:/Users/jacer/Downloads/pigilan/pigilan.db)
-  Local SQLite database file.
-
-- [`keras_model.h5`](/c:/Users/jacer/Downloads/pigilan/keras_model.h5)
-  ML model file.
-
-- [`labels.txt`](/c:/Users/jacer/Downloads/pigilan/labels.txt)
-  Class labels for the model.
-
-- [`views/`](/c:/Users/jacer/Downloads/pigilan/views)
-  Streamlit page files:
-  `home.py`, `about.py`, `asf_detection.py`, `cases.py`, `account.py`, `biosecurity.py`
-
-- [`static/`](/c:/Users/jacer/Downloads/pigilan/static)
-  PWA-related files like manifest, icon, and service worker.
-
-- [`.streamlit/config.toml`](/c:/Users/jacer/Downloads/pigilan/.streamlit/config.toml)
-  Enables static serving for PWA assets.
 
 ## Setup Requirements
 
@@ -285,21 +238,6 @@ Once deployed, sync becomes easier because:
 - users do not need to run local `uvicorn`
 - users do not need `localhost` for sync
 
-## Teammate Handoff Notes
-
-If your teammates are working on frontend/design, they should mainly look at:
-
-- [`app.py`](/c:/Users/jacer/Downloads/pigilan/app.py)
-- [`views/home.py`](/c:/Users/jacer/Downloads/pigilan/views/home.py)
-- [`views/asf_detection.py`](/c:/Users/jacer/Downloads/pigilan/views/asf_detection.py)
-- [`views/cases.py`](/c:/Users/jacer/Downloads/pigilan/views/cases.py)
-- [`views/account.py`](/c:/Users/jacer/Downloads/pigilan/views/account.py)
-
-If they are changing backend/database behavior, they should review:
-
-- [`backend.py`](/c:/Users/jacer/Downloads/pigilan/backend.py)
-- [`database.py`](/c:/Users/jacer/Downloads/pigilan/database.py)
-- [`sync_server.py`](/c:/Users/jacer/Downloads/pigilan/sync_server.py)
 
 ## Common Problems
 
@@ -345,45 +283,4 @@ This is expected when internet is weak or unavailable. Use:
 
 Use Python `3.11` and recreate `.venv` if needed.
 
-## Files That Can Usually Be Ignored In Handoff
 
-- `.venv/`
-- `__pycache__/`
-
-## Suggested Team Handoff Package
-
-Share the whole project except `.venv` if you want a lighter handoff:
-
-- `app.py`
-- `backend.py`
-- `database.py`
-- `location_picker.py`
-- `ml_model.py`
-- `pdf_utils.py`
-- `sync_server.py`
-- `requirements.txt`
-- `README.md`
-- `labels.txt`
-- `keras_model.h5`
-- `pigilan.db`
-- `views/`
-- `static/`
-- `.streamlit/`
-
-## Quick Start For Teammates
-
-If your teammate just wants to run it fast:
-
-```powershell
-cd "C:\Users\jacer\Downloads\pigilan"
-py -3.11 -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-python -m streamlit run app.py
-```
-
-If they also want sync:
-
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn sync_server:app --host 127.0.0.1 --port 8000
-```
