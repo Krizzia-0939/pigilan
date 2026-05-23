@@ -1,12 +1,13 @@
 # Pigilan  : Early Detection for Hog Farmers
 
-**Meet the developers**
+## **Meet the developers**
 <img width="2048" height="1365" alt="team-members" src="https://github.com/user-attachments/assets/f2cbb06e-ca01-4813-9dd5-c93ed5091de9" />
 
 **Members:** <br>
 Espartero, Joshua Daniel <br>
 Santacera, Krizzia Nicole<br>
 Turija, Ryssa Aryana
+
 
 
 <img width="1536" height="1024" alt="BG-PHOTO" src="https://github.com/user-attachments/assets/7ecf0cca-0dff-48b7-b89d-3d19d0ec267b" />
