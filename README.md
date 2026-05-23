@@ -1,4 +1,4 @@
-# Pigilan
+# Pigilan  : Early Detection for Hog Farmers
 
 <img width="1536" height="1024" alt="BG-PHOTO" src="https://github.com/user-attachments/assets/7ecf0cca-0dff-48b7-b89d-3d19d0ec267b" />
 
