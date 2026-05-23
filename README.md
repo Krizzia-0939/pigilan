@@ -1,4 +1,6 @@
-# Pigilan is a Streamlit-based ASF monitoring system for pig farmers. It helps users:
+# Pigilan is a Streamlit-based ASF monitoring system for pig farmers. 
+
+It helps users:
 
 - create local farmer accounts
 - check pigs for possible ASF risk
